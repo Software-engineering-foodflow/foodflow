@@ -35,9 +35,9 @@ colors:
   surface-subtle: '#FBFCF9'
   surface-header: '#F6F9F3'
   surface-selected: '#F1F7ED'
-  canvas-top: '#FAFCF7'
-  canvas-mid: '#F2F7EF'
-  canvas-bottom: '#E8F1E7'
+  canvas-top: '#FDFEFB'
+  canvas-mid: '#F9FBF7'
+  canvas-bottom: '#F4F8F3'
   line: '#E3EADF'
   line-soft: '#EFF3EC'
   line-selected: '#DFEADA'
@@ -46,9 +46,9 @@ colors:
   code-bg: '#EDF3E8'
   code-fg: '#3E5A45'
   # ── 側欄 ──
-  sidebar-top: '#F2F7ED'
-  sidebar-mid: '#E3EEDD'
-  sidebar-bottom: '#D5E5D0'
+  sidebar-top: '#F9FBF6'
+  sidebar-mid: '#F1F7EE'
+  sidebar-bottom: '#EAF2E8'
   sidebar-fg: '#3B4E42'
   sidebar-muted: '#4F6A58'
   sidebar-icon: '#6F8A79'
@@ -277,7 +277,7 @@ components:
 
 基準頁的次要文字原本是 `#76837A`、表頭是 `#7B8B80`，在 v=6 的漸層底上都低於 4.5:1，本規範各加深一階。placeholder 只做提示，所以輸入框**一定要有獨立的 label**，不可拿 placeholder 當欄位名稱。
 
-畫布底色是三段直向漸層：`{colors.canvas-top}` → `{colors.canvas-mid}` → `{colors.canvas-bottom}`（165deg），右上角再疊一層 `radial-gradient(700px 320px at 92% -40px, rgba(183,201,79,.22), transparent 70%)`。
+畫布底色是三段直向漸層：`{colors.canvas-top}` → `{colors.canvas-mid}` → `{colors.canvas-bottom}`（165deg），右上角再疊一層 `radial-gradient(700px 320px at 92% -40px, rgba(183,201,79,.11), transparent 70%)`。
 
 ### 狀態色
 
