@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 
 from app.core.clock import FixedClock
-from app.core.enums import ErrorCode, GoodsReceiptStatus, StorageType
+from app.core.enums import ErrorCode, ExpiryStatus, GoodsReceiptStatus, StorageType
 from app.core.errors import DomainError
 from app.db.models import InventoryBatch, StorageLocation
 from app.modules.storage_location.service import BatchRelocationService
@@ -177,7 +177,26 @@ def test_list_batches_only_stocked_sorted_by_expiry(service, ledger) -> None:
 
     items, total = service.list_batches(1, 1, 50)
 
-    assert (items, total) == ([sooner, later], 2)
+    assert ([item.batch for item in items], total) == ([sooner, later], 2)
+
+
+@pytest.mark.parametrize(
+    ("expiry", "status", "days"),
+    [
+        (date(2026, 11, 5), ExpiryStatus.EXPIRED, -1),
+        (date(2026, 11, 6), ExpiryStatus.EXPIRES_TODAY, 0),
+        (date(2026, 11, 9), ExpiryStatus.EXPIRING_SOON, 3),
+        (date(2026, 11, 10), ExpiryStatus.NORMAL, 4),
+    ],
+)
+def test_list_batches_classifies_expiry_with_clock_and_warning_days(
+    service, ledger, expiry, status, days
+) -> None:
+    _batch(ledger, expiry=expiry)
+
+    [item], _ = service.list_batches(1, 1, 50)
+
+    assert (item.expiry_status, item.days_until_expiry) == (status, days)
 
 
 def test_list_batches_of_unknown_location_is_not_found(service) -> None:

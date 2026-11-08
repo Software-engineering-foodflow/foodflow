@@ -16,8 +16,9 @@ from app.modules.storage_location.service import BatchRelocationService, Storage
 def get_storage_location_service(
     session: Session = Depends(get_session),
     uow: UnitOfWork = Depends(get_uow),
+    clock: Clock = Depends(get_clock),
 ) -> StorageLocationService:
-    return StorageLocationService(SqlAlchemyStorageLocationRepository(session), uow)
+    return StorageLocationService(SqlAlchemyStorageLocationRepository(session), uow, clock)
 
 
 def get_batch_relocation_service(

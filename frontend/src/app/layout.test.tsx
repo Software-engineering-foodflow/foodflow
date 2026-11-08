@@ -10,7 +10,10 @@ function nav() {
   return screen.getByRole("navigation", { name: "主要導覽" });
 }
 function navLabels() {
-  return Array.from(nav().querySelectorAll("a, button")).map((item) => item.textContent?.trim());
+  // 只取導覽項目；品牌列的收合鈕與底部使用者卡不算。
+  return Array.from(nav().querySelectorAll("a, button"))
+    .filter((item) => !item.closest('[aria-label="目前使用者"]') && !item.hasAttribute("data-sidebar-toggle"))
+    .map((item) => item.textContent?.trim());
 }
 function expandMasterData() {
   const group = within(nav()).getByRole("button", { name: "基本資料" });
@@ -130,16 +133,55 @@ describe("AppLayout navigation", () => {
   });
 });
 
-describe("AppLayout header", () => {
-  it("shows the manager role", async () => {
+describe("AppLayout header and user card", () => {
+  it("drops the top bar on wide screens and puts brand, user and sign out in the sidebar", async () => {
+    setViewportWidth(1366);
     renderApp(routes.home, admin);
-    expect(await screen.findByText("王店長 · 管理者")).toBeTruthy();
+    await screen.findByRole("heading", { level: 1, name: "預警首頁" });
+    expect(screen.queryByRole("banner")).toBeNull();
+    expect(within(nav()).getByText("食序 FoodFlow")).toBeTruthy();
+    const user = within(within(nav()).getByRole("region", { name: "目前使用者" }));
+    expect(user.getByText("王店長")).toBeTruthy();
+    expect(user.getByText("管理者")).toBeTruthy();
+    expect(user.getByRole("button", { name: "登出" })).toBeTruthy();
   });
-  it("shows the system name, employee, role and signs out to the login page", async () => {
+
+  it("collapses from the brand row and leaves a top-left expand button", async () => {
+    setViewportWidth(1366);
+    renderApp(routes.home);
+    await screen.findByRole("heading", { level: 1, name: "預警首頁" });
+    const collapse = within(nav()).getByRole("button", { name: "收合導覽列" });
+    expect(collapse.getAttribute("aria-expanded")).toBe("true");
+    expect(collapse.getAttribute("aria-controls")).toBe(nav().id);
+    fireEvent.click(collapse);
+    expect(nav().hasAttribute("inert")).toBe(true);
+    const expand = screen.getByRole("button", { name: "展開導覽列" });
+    expect(nav().contains(expand)).toBe(false);
+    expect(expand.getAttribute("aria-expanded")).toBe("false");
+    expect(expand.getAttribute("aria-controls")).toBe(nav().id);
+    fireEvent.click(expand);
+    expect(nav().hasAttribute("inert")).toBe(false);
+    expect(screen.queryByRole("button", { name: "展開導覽列" })).toBeNull();
+  });
+
+  it("keeps a slim top bar with the toggle and brand on narrow screens", async () => {
+    setViewportWidth(700);
     renderApp(routes.home, staff);
-    expect(await screen.findByText("食序 FoodFlow")).toBeTruthy();
-    expect(screen.getByText("員工 · 一般員工")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "登出" }));
+    await screen.findByRole("heading", { level: 1, name: "預警首頁" });
+    const banner = within(screen.getByRole("banner"));
+    expect(banner.getByText("食序 FoodFlow")).toBeTruthy();
+    const toggle = banner.getByRole("button", { name: "展開導覽列" });
+    expect(toggle.getAttribute("aria-controls")).toBe(nav().id);
+    expect(within(nav()).queryByText("食序 FoodFlow")).toBeNull();
+  });
+
+  it("shows the employee and role and signs out to the login page", async () => {
+    renderApp(routes.home, staff);
+    await screen.findByRole("heading", { level: 1, name: "預警首頁" });
+    const user = within(within(nav()).getByRole("region", { name: "目前使用者" }));
+    expect(user.getByText("員工")).toBeTruthy();
+    expect(user.getByText("一般員工")).toBeTruthy();
+    fireEvent.click(user.getByRole("button", { name: "登出" }));
     expect(await screen.findByRole("heading", { name: "登入帳號" })).toBeTruthy();
   });
 });

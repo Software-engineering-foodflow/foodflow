@@ -5,7 +5,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
-from app.core.enums import GoodsReceiptStatus, StorageType
+from app.core.enums import ExpiryStatus, GoodsReceiptStatus, StorageType
 from app.core.types import NonNegativeQuantity
 
 LocationCode = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=32)]
@@ -49,8 +49,17 @@ class StorageLocationResponse(BaseModel):
     is_active: bool
 
 
+class StorageLocationListItem(StorageLocationResponse):
+    """清單列另附批次統計；狀態與天數由後端 classify_expiry 判定（AD-11）。"""
+
+    batch_count: int = Field(description="位於此位置、剩餘量大於 0 的批次數")
+    nearest_expiry_date: date | None
+    nearest_expiry_status: ExpiryStatus | None
+    nearest_days_until_expiry: int | None
+
+
 class StorageLocationList(BaseModel):
-    items: list[StorageLocationResponse]
+    items: list[StorageLocationListItem]
     total: int
     page: int
     page_size: int
@@ -78,8 +87,34 @@ class LocationBatchResponse(BaseModel):
     source_status: GoodsReceiptStatus
 
 
+class LocationBatchItem(LocationBatchResponse):
+    expiry_status: ExpiryStatus
+    days_until_expiry: int
+
+
 class LocationBatchList(BaseModel):
-    items: list[LocationBatchResponse]
+    items: list[LocationBatchItem]
     total: int
     page: int
     page_size: int
+
+
+class StorageTypeSummaryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    storage_type: StorageType
+    location_count: int = Field(description="此類型的啟用位置數")
+    batch_count: int
+    expired_count: int
+    expires_today_count: int
+    expiring_soon_count: int
+
+
+class StorageLocationSummaryResponse(BaseModel):
+    """只算啟用位置；total_count 含停用位置。by_type 固定列出全部類型。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    active_count: int
+    total_count: int
+    by_type: list[StorageTypeSummaryResponse]

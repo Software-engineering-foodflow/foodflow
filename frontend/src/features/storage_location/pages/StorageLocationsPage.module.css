@@ -38,7 +38,7 @@
   }
 }
 
-/* 展開時捲動對齊用：預留固定頁首（72px）加一點間距。 */
+/* 展開時捲動對齊用：窄螢幕預留固定頂部列，寬螢幕沒有頂部列，只留一點間距。 */
 .anchor {
-  scroll-margin-top: 88px;
+  scroll-margin-top: calc(var(--app-shell-header-offset, 0px) + 16px);
 }

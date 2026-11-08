@@ -1,17 +1,19 @@
 """FR-05 儲存位置 API，連真實 PostgreSQL：權限、唯一性、停用與刪除的引用檢查。"""
 
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import update
 
 from app.core.clock import FixedClock
 from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.core.dependencies import get_clock
-from app.core.enums import EmployeeRole, ErrorCode, StorageType, TransactionType
+from app.core.enums import EmployeeRole, ErrorCode, ExpiryStatus, StorageType, TransactionType
 from app.core.errors import DomainError
-from app.db.models import BatchLocationChange, StorageLocation
+from app.db.models import AlertSetting, BatchLocationChange, StorageLocation
 from app.main import create_app
 from app.modules.inventory.ledger_sqlalchemy import SqlAlchemyStockLedger
 from app.modules.storage_location.repository_sqlalchemy import (
@@ -19,6 +21,7 @@ from app.modules.storage_location.repository_sqlalchemy import (
 )
 from tests.integration.factories import (
     NOW,
+    TODAY,
     add_employee,
     add_ingredient,
     add_item,
@@ -284,7 +287,21 @@ def test_staff_can_list_but_not_write(admin, staff) -> None:
     ]
     assert [response.status_code for response in responses] == [403, 403, 403]
     assert {response.json()["error"]["code"] for response in responses} == {ErrorCode.FORBIDDEN}
-    assert _get(admin, location["id"]) == location
+    # 清單列在建立回應之外另附批次統計，原有欄位要完全相同。
+    listed = _get(admin, location["id"])
+    assert listed.items() >= location.items()
+    assert listed["batch_count"] == 0
+    assert (
+        listed["nearest_expiry_date"],
+        listed["nearest_expiry_status"],
+        listed["nearest_days_until_expiry"],
+    ) == (None, None, None)
+    assert set(listed) == set(location) | {
+        "batch_count",
+        "nearest_expiry_date",
+        "nearest_expiry_status",
+        "nearest_days_until_expiry",
+    }
 
 
 def test_unknown_location_is_not_found(admin) -> None:
@@ -296,3 +313,131 @@ def test_unknown_location_is_not_found(admin) -> None:
 
 def test_anonymous_request_is_unauthenticated(app) -> None:
     assert TestClient(app).get(URL).status_code == 401
+
+
+def _stock(session, location_id: int, operator_id: int, ingredient_id: int, *offsets: int) -> None:
+    for offset in offsets:
+        receive_batch(
+            session,
+            ingredient_id=ingredient_id,
+            location_id=location_id,
+            operator_id=operator_id,
+            expiry_date=TODAY + timedelta(days=offset),
+        )
+
+
+def _typed_location(session, storage_type: StorageType) -> int:
+    location = add_location(session)
+    location.storage_type = storage_type
+    session.flush()
+    return location.id
+
+
+def test_list_includes_batch_count_and_nearest_expiry(admin) -> None:
+    exhausted_id = _location_with_batch(exhaust=True)
+    with get_session_factory()() as session:
+        employee = add_employee(session)
+        ingredient_id = add_ingredient(session).id
+        stocked_id = add_location(session).id
+        empty_id = add_location(session).id
+        _stock(session, stocked_id, employee.id, ingredient_id, 5, 0, 2)
+        session.commit()
+
+    stocked = _get(admin, stocked_id)
+    assert stocked["batch_count"] == 3
+    assert stocked["nearest_expiry_date"] == TODAY.isoformat()
+    assert stocked["nearest_expiry_status"] == ExpiryStatus.EXPIRES_TODAY
+    assert stocked["nearest_days_until_expiry"] == 0
+    for location_id in (empty_id, exhausted_id):
+        location = _get(admin, location_id)
+        assert location["batch_count"] == 0
+        assert (
+            location["nearest_expiry_date"],
+            location["nearest_expiry_status"],
+            location["nearest_days_until_expiry"],
+        ) == (None, None, None)
+
+
+@pytest.mark.parametrize(
+    ("warning_days", "statuses"),
+    [
+        (3, ["EXPIRED", "EXPIRES_TODAY", "EXPIRING_SOON", "NORMAL"]),
+        (5, ["EXPIRED", "EXPIRES_TODAY", "EXPIRING_SOON", "EXPIRING_SOON"]),
+    ],
+)
+def test_batch_and_nearest_status_use_clock_and_first_alert_setting(
+    admin, warning_days, statuses
+) -> None:
+    offsets = (-1, 0, 3, 4)
+    with get_session_factory()() as session:
+        session.execute(update(AlertSetting).values(warning_days=warning_days))
+        employee = add_employee(session)
+        ingredient_id = add_ingredient(session).id
+        location_ids = [add_location(session).id for _ in offsets]
+        for location_id, offset in zip(location_ids, offsets, strict=True):
+            _stock(session, location_id, employee.id, ingredient_id, offset)
+        all_in_one = add_location(session).id
+        _stock(session, all_in_one, employee.id, ingredient_id, *offsets)
+        session.commit()
+
+    nearest = [_get(admin, location_id) for location_id in location_ids]
+    assert [item["nearest_expiry_status"] for item in nearest] == statuses
+    assert [item["nearest_days_until_expiry"] for item in nearest] == list(offsets)
+
+    items = admin.get(f"{URL}/{all_in_one}/batches").json()["items"]
+    assert [item["expiry_status"] for item in items] == statuses
+    assert [item["days_until_expiry"] for item in items] == list(offsets)
+
+
+def test_summary_counts_active_locations_and_their_batches(staff) -> None:
+    with get_session_factory()() as session:
+        employee = add_employee(session)
+        ingredient_id = add_ingredient(session).id
+        fridge = _typed_location(session, StorageType.REFRIGERATED)
+        _typed_location(session, StorageType.REFRIGERATED)
+        freezer = _typed_location(session, StorageType.FROZEN)
+        shelf = _typed_location(session, StorageType.AMBIENT)
+        _stock(session, fridge, employee.id, ingredient_id, 0, *[10] * 5)
+        _stock(session, freezer, employee.id, ingredient_id, 2, 3, *[30] * 7)
+        _stock(session, shelf, employee.id, ingredient_id, -1, *[20] * 4)
+        # 停用位置的批次不算：先入庫再停用（正式流程會擋，這裡直接改欄位）。
+        retired = _typed_location(session, StorageType.AMBIENT)
+        _stock(session, retired, employee.id, ingredient_id, -5, -5)
+        session.get_one(StorageLocation, retired).is_active = False
+        session.commit()
+
+    response = staff.get(f"{URL}/summary")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["active_count"], body["total_count"]) == (4, 5)
+    assert body["by_type"] == [
+        {
+            "storage_type": "REFRIGERATED",
+            "location_count": 2,
+            "batch_count": 6,
+            "expired_count": 0,
+            "expires_today_count": 1,
+            "expiring_soon_count": 0,
+        },
+        {
+            "storage_type": "FROZEN",
+            "location_count": 1,
+            "batch_count": 9,
+            "expired_count": 0,
+            "expires_today_count": 0,
+            "expiring_soon_count": 2,
+        },
+        {
+            "storage_type": "AMBIENT",
+            "location_count": 1,
+            "batch_count": 5,
+            "expired_count": 1,
+            "expires_today_count": 0,
+            "expiring_soon_count": 0,
+        },
+    ]
+
+
+def test_summary_requires_login(app) -> None:
+    assert TestClient(app).get(f"{URL}/summary").status_code == 401

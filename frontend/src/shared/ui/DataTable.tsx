@@ -10,6 +10,8 @@ interface DataTableProps {
   label?: string;
   /** 欄位多時的最小寬度；寬度不夠時表格在外框內橫向捲動，頁面本身不捲動。 */
   minWidth?: number;
+  /** 貼齊模式：不加外框與圓角，直接貼齊所在的卡片（例如主卡片裡工具列下方的表格）。 */
+  flush?: boolean;
 }
 
 /**
@@ -21,14 +23,19 @@ interface DataTableProps {
  *   {items.map((item) => <Table.Tr key={item.id}>…</Table.Tr>)}
  * </DataTable>
  * ```
+ *
+ * 放在主卡片裡、緊接工具列時用 `flush`，表格直接貼齊卡片左右邊緣，不再多一層外框。
  */
-export function DataTable({ head, children, label, minWidth }: DataTableProps) {
+export function DataTable({ head, children, label, minWidth, flush = false }: DataTableProps) {
   const table = <Table className="ff-data-table" aria-label={label} verticalSpacing="sm" horizontalSpacing="md"
     highlightOnHover bg="white">
     <Table.Thead><Table.Tr>{head}</Table.Tr></Table.Thead>
     <Table.Tbody>{children}</Table.Tbody>
   </Table>;
+  const content = minWidth === undefined ? table
+    : <Table.ScrollContainer minWidth={minWidth}>{table}</Table.ScrollContainer>;
+  if (flush) return content;
   return <Paper withBorder radius="lg" style={{ overflow: "hidden", borderColor: "var(--ff-line)" }}>
-    {minWidth === undefined ? table : <Table.ScrollContainer minWidth={minWidth}>{table}</Table.ScrollContainer>}
+    {content}
   </Paper>;
 }

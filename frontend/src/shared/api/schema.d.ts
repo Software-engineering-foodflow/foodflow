@@ -108,6 +108,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/storage-locations/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Storage Location Summary */
+        get: operations["storage_location_summary_api_v1_storage_locations_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage-locations/{location_id}": {
         parameters: {
             query?: never;
@@ -290,6 +307,11 @@ export interface components {
             error: components["schemas"]["ErrorBody"];
         };
         /**
+         * ExpiryStatus
+         * @enum {string}
+         */
+        ExpiryStatus: "EXPIRED" | "EXPIRES_TODAY" | "EXPIRING_SOON" | "NORMAL";
+        /**
          * GoodsReceiptStatus
          * @enum {string}
          */
@@ -307,10 +329,40 @@ export interface components {
              */
             database: "ok" | "unavailable";
         };
+        /** LocationBatchItem */
+        LocationBatchItem: {
+            /** Id */
+            id: number;
+            /** Batch Number */
+            batch_number: string;
+            /** Ingredient Id */
+            ingredient_id: number;
+            /** Ingredient Name */
+            ingredient_name: string;
+            /** Unit */
+            unit: string;
+            /** Remaining Quantity */
+            remaining_quantity: string;
+            /**
+             * Expiry Date
+             * Format: date
+             */
+            expiry_date: string;
+            /** Current Location Id */
+            current_location_id: number;
+            /** Current Location Code */
+            current_location_code: string;
+            /** Current Location Name */
+            current_location_name: string;
+            source_status: components["schemas"]["GoodsReceiptStatus"];
+            expiry_status: components["schemas"]["ExpiryStatus"];
+            /** Days Until Expiry */
+            days_until_expiry: number;
+        };
         /** LocationBatchList */
         LocationBatchList: {
             /** Items */
-            items: components["schemas"]["LocationBatchResponse"][];
+            items: components["schemas"]["LocationBatchItem"][];
             /** Total */
             total: number;
             /** Page */
@@ -370,13 +422,40 @@ export interface components {
         /** StorageLocationList */
         StorageLocationList: {
             /** Items */
-            items: components["schemas"]["StorageLocationResponse"][];
+            items: components["schemas"]["StorageLocationListItem"][];
             /** Total */
             total: number;
             /** Page */
             page: number;
             /** Page Size */
             page_size: number;
+        };
+        /**
+         * StorageLocationListItem
+         * @description 清單列另附批次統計；狀態與天數由後端 classify_expiry 判定（AD-11）。
+         */
+        StorageLocationListItem: {
+            /** Id */
+            id: number;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            storage_type: components["schemas"]["StorageType"];
+            /** Description */
+            description: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Batch Count
+             * @description 位於此位置、剩餘量大於 0 的批次數
+             */
+            batch_count: number;
+            /** Nearest Expiry Date */
+            nearest_expiry_date: string | null;
+            nearest_expiry_status: components["schemas"]["ExpiryStatus"] | null;
+            /** Nearest Days Until Expiry */
+            nearest_days_until_expiry: number | null;
         };
         /** StorageLocationResponse */
         StorageLocationResponse: {
@@ -391,6 +470,18 @@ export interface components {
             description: string | null;
             /** Is Active */
             is_active: boolean;
+        };
+        /**
+         * StorageLocationSummaryResponse
+         * @description 只算啟用位置；total_count 含停用位置。by_type 固定列出全部類型。
+         */
+        StorageLocationSummaryResponse: {
+            /** Active Count */
+            active_count: number;
+            /** Total Count */
+            total_count: number;
+            /** By Type */
+            by_type: components["schemas"]["StorageTypeSummaryResponse"][];
         };
         /** StorageLocationUpdate */
         StorageLocationUpdate: {
@@ -410,6 +501,23 @@ export interface components {
          * @enum {string}
          */
         StorageType: "REFRIGERATED" | "FROZEN" | "AMBIENT";
+        /** StorageTypeSummaryResponse */
+        StorageTypeSummaryResponse: {
+            storage_type: components["schemas"]["StorageType"];
+            /**
+             * Location Count
+             * @description 此類型的啟用位置數
+             */
+            location_count: number;
+            /** Batch Count */
+            batch_count: number;
+            /** Expired Count */
+            expired_count: number;
+            /** Expires Today Count */
+            expires_today_count: number;
+            /** Expiring Soon Count */
+            expiring_soon_count: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -981,6 +1089,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StorageLocationResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    storage_location_summary_api_v1_storage_locations_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageLocationSummaryResponse"];
                 };
             };
             /** @description Unauthorized */

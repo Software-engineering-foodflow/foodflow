@@ -13,6 +13,12 @@ interface ToolbarProps {
    * 不傳時只排版、不加底色（例如手機版沒有外框時）。
    */
   bleed?: number;
+  /**
+   * 單列無標籤模式：搜尋框佔滿剩餘寬度、篩選固定約 150px，排成一列。
+   * 放在內距為 0 的主卡片頂部，自帶 16px 內距、淡漸層與分隔線；忽略 `cols` 與 `bleed`。
+   * 欄位沒有看得見的 label，呼叫端一定要給 `aria-label`。
+   */
+  row?: boolean;
 }
 
 /**
@@ -28,8 +34,18 @@ interface ToolbarProps {
  *   …
  * </Paper>
  * ```
+ *
+ * 單列模式（主卡片 `p={0}`）：
+ *
+ * ```tsx
+ * <Toolbar row>
+ *   <SearchInput aria-label="搜尋代碼或名稱" placeholder="搜尋代碼或名稱" … />
+ *   <Select aria-label="儲存類型" … />
+ * </Toolbar>
+ * ```
  */
-export function Toolbar({ children, cols = { base: 2, sm: 3 }, spacing = "md", bleed }: ToolbarProps) {
+export function Toolbar({ children, cols = { base: 2, sm: 3 }, spacing = "md", bleed, row = false }: ToolbarProps) {
+  if (row) return <Box className="ff-toolbar ff-toolbar-row" p="md">{children}</Box>;
   const grid = <SimpleGrid cols={cols} spacing={spacing}>{children}</SimpleGrid>;
   if (bleed === undefined) return grid;
   return <Box className="ff-toolbar" mx={-bleed} mt={-bleed} px={bleed} pt={bleed} pb="md"

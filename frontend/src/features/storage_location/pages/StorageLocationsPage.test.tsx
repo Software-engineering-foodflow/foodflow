@@ -9,12 +9,20 @@ import { admin, staff } from "../../../test/renderApp";
 import { StorageLocationsPage } from "./StorageLocationsPage";
 
 const fridge = { id: 1, code: "R-01", name: "冷藏庫 A", storage_type: "REFRIGERATED",
-  description: "靠門口", is_active: true };
+  description: "靠門口", is_active: true, batch_count: 3, nearest_expiry_date: "2026-11-08",
+  nearest_expiry_status: "EXPIRES_TODAY", nearest_days_until_expiry: 0 };
 const freezer = { ...fridge, id: 2, code: "F-01", name: "冷凍庫 B", storage_type: "FROZEN",
-  description: null };
+  description: null, batch_count: 0, nearest_expiry_date: null, nearest_expiry_status: null,
+  nearest_days_until_expiry: null };
 const chicken = { id: 11, batch_number: "B-00000011", ingredient_id: 5, ingredient_name: "雞胸肉",
-  unit: "kg", remaining_quantity: "5.000", expiry_date: "2026-11-20", current_location_id: 1,
-  current_location_code: "R-01", current_location_name: "冷藏庫 A", source_status: "CONFIRMED" };
+  unit: "kg", remaining_quantity: "5.000", expiry_date: "2026-11-10", current_location_id: 1,
+  current_location_code: "R-01", current_location_name: "冷藏庫 A", source_status: "CONFIRMED",
+  expiry_status: "EXPIRING_SOON", days_until_expiry: 2 };
+const typeRow = (storage_type: string, location_count: number, batch_count: number,
+  expired_count = 0, expires_today_count = 0, expiring_soon_count = 0) => ({
+  storage_type, location_count, batch_count, expired_count, expires_today_count, expiring_soon_count });
+const summary = { active_count: 4, total_count: 5, by_type: [
+  typeRow("REFRIGERATED", 2, 6, 0, 1, 2), typeRow("FROZEN", 1, 9, 0, 0, 2), typeRow("AMBIENT", 1, 5, 1, 0, 2)] };
 const batchPage = { items: [chicken], total: 1, page: 1, page_size: 100 };
 const list = (items: unknown[]) => ({ items, total: items.length, page: 1, page_size: 20 });
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
@@ -29,7 +37,8 @@ type Handler = (path: string, init: RequestInit) => Response | undefined;
 
 function renderPage(employee: typeof admin, handler: Handler = () => undefined) {
   const fetchMock = vi.fn(async (path: string, init: RequestInit = {}) =>
-    path.endsWith("/auth/me") ? json(employee) : handler(path, init) ?? json(list([fridge])));
+    path.endsWith("/auth/me") ? json(employee) : handler(path, init)
+      ?? (path.endsWith("/storage-locations/summary") ? json(summary) : json(list([fridge]))));
   vi.stubGlobal("fetch", fetchMock);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   client.setQueryData(queryKeys.auth.all, employee);
@@ -38,6 +47,21 @@ function renderPage(employee: typeof admin, handler: Handler = () => undefined) 
     <StorageLocationsPage />
   </MemoryRouter></QueryClientProvider></MantineProvider>);
   return { client, fetchMock };
+}
+
+/** 模擬寬螢幕：只有 min-width 查詢成立（表格版面）。 */
+function stubWide() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query.includes("min-width"), media: query, onchange: null,
+    addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {},
+    removeListener: () => {}, dispatchEvent: () => false,
+  }));
+}
+
+/** 管理者的編輯／刪除收在列尾「⋯」選單。 */
+async function chooseRowAction(code: string, action: "編輯" | "刪除") {
+  fireEvent.click(await screen.findByRole("button", { name: `${code} 的操作` }));
+  fireEvent.click(await screen.findByRole("menuitem", { name: `${action} ${code}` }));
 }
 
 async function chooseStorageType(dialog: ReturnType<typeof within>, label: string) {
@@ -54,8 +78,7 @@ describe("StorageLocationsPage", () => {
     expect(within(row).getByText("冷藏")).toBeTruthy();
     expect(within(row).getByText("啟用")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "新增位置" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "編輯 R-01" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "刪除 R-01" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "R-01 的操作" })).toBeNull();
     expect(fetchMock.mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")).toBe(true);
   });
 
@@ -117,7 +140,7 @@ describe("StorageLocationsPage", () => {
           [{ field: "is_active", message: "位置上仍有剩餘庫存" }], { batch_count: 2 }), 409);
       }
     });
-    fireEvent.click(await screen.findByRole("button", { name: "編輯 R-01" }));
+    await chooseRowAction("R-01", "編輯");
     const dialog = within(await screen.findByRole("dialog"));
     fireEvent.click(dialog.getByLabelText(/^啟用此位置/));
     fireEvent.submit(dialog.getByRole("button", { name: "儲存" }).closest("form")!);
@@ -132,7 +155,7 @@ describe("StorageLocationsPage", () => {
     renderPage(admin, (_, init) => init.method === "DELETE"
       ? json(error("REFERENCED", "此位置已被進貨或庫存紀錄使用，不能刪除，請改用停用"), 409)
       : undefined);
-    fireEvent.click(await screen.findByRole("button", { name: "刪除 R-01" }));
+    await chooseRowAction("R-01", "刪除");
     const dialog = within(await screen.findByRole("dialog"));
     fireEvent.click(dialog.getByRole("button", { name: "確認刪除" }));
 
@@ -160,7 +183,7 @@ describe("StorageLocationsPage", () => {
   it("closes the dialog and refreshes stock queries after a successful edit", async () => {
     const { client } = renderPage(admin, (_, init) => init.method === "PATCH"
       ? json({ ...fridge, is_active: false }) : undefined);
-    fireEvent.click(await screen.findByRole("button", { name: "編輯 R-01" }));
+    await chooseRowAction("R-01", "編輯");
     const dialog = within(await screen.findByRole("dialog"));
     fireEvent.click(dialog.getByLabelText(/^啟用此位置/));
     fireEvent.submit(dialog.getByRole("button", { name: "儲存" }).closest("form")!);
@@ -173,7 +196,7 @@ describe("StorageLocationsPage", () => {
   it("deletes an unreferenced location and refreshes stock queries", async () => {
     const { client } = renderPage(admin, (_, init) => init.method === "DELETE"
       ? new Response(null, { status: 204 }) : undefined);
-    fireEvent.click(await screen.findByRole("button", { name: "刪除 R-01" }));
+    await chooseRowAction("R-01", "刪除");
     const dialog = within(await screen.findByRole("dialog"));
     fireEvent.click(dialog.getByRole("button", { name: "確認刪除" }));
 
@@ -238,37 +261,55 @@ describe("StorageLocationsPage", () => {
     expect(batches.getByText("B-00000011")).toBeTruthy();
     // 數量與單位分開排版，以整段文字比對。
     expect(batches.getByText((_, el) => el?.tagName === "P" && el.textContent === "5.000 kg")).toBeTruthy();
-    expect(batches.getByText("到期日 2026-11-20")).toBeTruthy();
+    expect(batches.getByText("到期日 2026-11-10")).toBeTruthy();
+    expect(batches.getByText("即期 · 剩 2 天")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "換位置 B-00000011" })).toBeNull();
   });
 
-  it("uses tables for locations and batches on wide screens", async () => {
-    // jsdom 預設 matchMedia 一律不符合（卡片版面）；這裡模擬 1366 寬的螢幕。
-    vi.stubGlobal("matchMedia", (query: string) => ({
-      matches: query.includes("min-width"), media: query, onchange: null,
-      addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {},
-      removeListener: () => {}, dispatchEvent: () => false,
-    }));
-    renderPage(admin, batchHandler());
+  it("uses tables with batch count, nearest expiry and a row menu on wide screens", async () => {
+    // jsdom 預設 matchMedia 一律不符合（卡片版面）；這裡模擬寬螢幕（1024 以上都用表格）。
+    stubWide();
+    renderPage(admin, (path, init) => path.includes("/storage-locations?")
+      ? json(list([fridge, freezer])) : batchHandler()(path, init));
 
     const row = (await screen.findByText("冷藏庫 A")).closest("tr")!;
+    expect(Array.from(row.closest("table")!.querySelectorAll("thead th")).map((th) => th.textContent))
+      .toEqual(["代碼", "名稱", "類型", "批次", "最近到期", "狀態", "操作與批次"]);
     expect(within(row).getByText("R-01")).toBeTruthy();
-    expect(within(row).getByText("靠門口")).toBeTruthy();
-    expect(within(row).getByRole("button", { name: "編輯 R-01" })).toBeTruthy();
+    expect(within(row).getByText("冷藏")).toBeTruthy();
+    expect(within(row).getByText("3 批")).toBeTruthy();
+    expect(within(row).getByText("今日到期")).toBeTruthy();
+    expect(within(row).queryByRole("button", { name: "編輯 R-01" })).toBeNull();
+    fireEvent.click(within(row).getByRole("button", { name: "R-01 的操作" }));
+    expect(await screen.findByRole("menuitem", { name: "編輯 R-01" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "刪除 R-01" })).toBeTruthy();
+    // 沒有剩餘批次的位置：最近到期顯示「—」。
+    const empty = screen.getByText("冷凍庫 B").closest("tr")!;
+    expect(within(empty).getByText("0 批")).toBeTruthy();
+    expect(within(empty).getByText("—")).toBeTruthy();
+    expect(screen.queryByText(/共 [0-9]+ 個位置/)).toBeNull();
+
     const batches = await openBatches();
     expect(screen.getByRole("table", { name: "R-01 的批次" })).toBeTruthy();
-    expect(batches.getByText("2026-11-20")).toBeTruthy();
+    expect(batches.getByText("2026-11-10")).toBeTruthy();
+    expect(batches.getByText("即期 · 剩 2 天")).toBeTruthy();
     expect(batches.getByRole("button", { name: "換位置 B-00000011" })).toBeTruthy();
   });
 
-  it("shows active location counts by storage type", async () => {
+  it("shows breadcrumb and summary cards from the summary API", async () => {
     renderPage(staff, batchHandler());
 
-    const summary = within(await screen.findByLabelText("位置摘要"));
-    await waitFor(() => expect(summary.getByText("啟用中").nextSibling?.textContent).toBe("2"));
-    expect(summary.getByText("冷藏").nextSibling?.textContent).toBe("1");
-    expect(summary.getByText("冷凍").nextSibling?.textContent).toBe("1");
-    expect(summary.getByText("常溫").nextSibling?.textContent).toBe("0");
+    expect(screen.getByRole("navigation", { name: "麵包屑" }).textContent).toBe("基本資料 / 儲存位置");
+    const cards = within(await screen.findByLabelText("位置摘要"));
+    const card = (label: string) => within(cards.getByText(label).parentElement!);
+    await waitFor(() => expect(card("啟用中位置").getByText("4")).toBeTruthy());
+    expect(card("啟用中位置").getByText("共 5 個 · 1 停用")).toBeTruthy();
+    expect(card("冷藏").getByText("2")).toBeTruthy();
+    // 今日到期優先於即期。
+    expect(card("冷藏").getByText("6 批次 · 1 今日到期")).toBeTruthy();
+    expect(card("冷凍").getByText("9 批次 · 2 即期")).toBeTruthy();
+    // 只放最緊急的一項：過期優先於即期。
+    expect(card("常溫").getByText("5 批次 · 1 過期")).toBeTruthy();
   });
 
   it("guides admins to create the first location when there are none", async () => {

@@ -12,14 +12,23 @@ from app.modules.storage_location.dependencies import (
 )
 from app.modules.storage_location.schemas import (
     BatchMoveRequest,
+    LocationBatchItem,
     LocationBatchList,
     LocationBatchResponse,
     StorageLocationCreate,
     StorageLocationList,
+    StorageLocationListItem,
     StorageLocationResponse,
+    StorageLocationSummaryResponse,
     StorageLocationUpdate,
 )
-from app.modules.storage_location.service import BatchRelocationService, StorageLocationService
+from app.modules.storage_location.service import (
+    BatchRelocationService,
+    BatchView,
+    LocationOverview,
+    LocationSummary,
+    StorageLocationService,
+)
 
 router = APIRouter(responses=ERROR_RESPONSES, tags=["storage-locations"])
 
@@ -35,11 +44,31 @@ def list_storage_locations(
 ) -> StorageLocationList:
     items, total = service.list_locations(search, storage_type, is_active, page, page_size)
     return StorageLocationList(
-        items=[StorageLocationResponse.model_validate(item) for item in items],
+        items=[_list_item(item) for item in items],
         total=total,
         page=page,
         page_size=page_size,
     )
+
+
+def _list_item(overview: LocationOverview) -> StorageLocationListItem:
+    base = StorageLocationResponse.model_validate(overview.location).model_dump()
+    return StorageLocationListItem(
+        **base,
+        batch_count=overview.batch_count,
+        nearest_expiry_date=overview.nearest_expiry_date,
+        nearest_expiry_status=overview.nearest_expiry_status,
+        nearest_days_until_expiry=overview.nearest_days_until_expiry,
+    )
+
+
+# 固定路徑放在 /{location_id} 路由之前，先保留這個路徑：
+# 日後新增 GET /{location_id} 時，summary 才不會被當成位置 id。
+@router.get("/storage-locations/summary", response_model=StorageLocationSummaryResponse)
+def storage_location_summary(
+    service: StorageLocationService = Depends(get_storage_location_service),
+) -> LocationSummary:
+    return service.summary()
 
 
 @router.post("/storage-locations", status_code=201, response_model=StorageLocationResponse)
@@ -71,22 +100,31 @@ def delete_storage_location(
     return Response(status_code=204)
 
 
-def _batch_response(batch: InventoryBatch) -> LocationBatchResponse:
+def _batch_fields(batch: InventoryBatch) -> dict:
     # 用 dict 而不是關鍵字參數：AD-5 的架構測試會把 remaining_quantity= 視為寫入批次。
-    return LocationBatchResponse.model_validate(
-        {
-            "id": batch.id,
-            "batch_number": batch.batch_number,
-            "ingredient_id": batch.ingredient_id,
-            "ingredient_name": batch.ingredient.name,
-            "unit": batch.ingredient.unit,
-            "remaining_quantity": batch.remaining_quantity,
-            "expiry_date": batch.expiry_date,
-            "current_location_id": batch.current_location_id,
-            "current_location_code": batch.current_location.code,
-            "current_location_name": batch.current_location.name,
-            "source_status": batch.source_item.receipt.status,
-        }
+    return {
+        "id": batch.id,
+        "batch_number": batch.batch_number,
+        "ingredient_id": batch.ingredient_id,
+        "ingredient_name": batch.ingredient.name,
+        "unit": batch.ingredient.unit,
+        "remaining_quantity": batch.remaining_quantity,
+        "expiry_date": batch.expiry_date,
+        "current_location_id": batch.current_location_id,
+        "current_location_code": batch.current_location.code,
+        "current_location_name": batch.current_location.name,
+        "source_status": batch.source_item.receipt.status,
+    }
+
+
+def _batch_response(batch: InventoryBatch) -> LocationBatchResponse:
+    return LocationBatchResponse.model_validate(_batch_fields(batch))
+
+
+def _batch_item(view: BatchView) -> LocationBatchItem:
+    return LocationBatchItem.model_validate(
+        _batch_fields(view.batch)
+        | {"expiry_status": view.expiry_status, "days_until_expiry": view.days_until_expiry}
     )
 
 
@@ -99,7 +137,7 @@ def list_location_batches(
 ) -> LocationBatchList:
     items, total = service.list_batches(location_id, page, page_size)
     return LocationBatchList(
-        items=[_batch_response(item) for item in items],
+        items=[_batch_item(item) for item in items],
         total=total,
         page=page,
         page_size=page_size,

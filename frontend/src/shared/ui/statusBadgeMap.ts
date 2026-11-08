@@ -16,3 +16,17 @@ export const statusBadgeMap = {
 } as const satisfies Record<string, { label: string; color: string; tone: BadgeTone }>;
 
 export type BadgeStatus = keyof typeof statusBadgeMap;
+
+/**
+ * 帶剩餘天數的標籤文字（DESIGN.md › 狀態標籤）。`days` 一律是後端回傳的 days_until_expiry，
+ * 前端不自己算。開頭一定是狀態詞；正常狀態只是弱提示，不加狀態詞。
+ */
+export function statusTextWithDays(status: BadgeStatus, days: number): string {
+  switch (status) {
+    case "EXPIRED": return `過期 ${-days} 天`;
+    case "EXPIRES_TODAY": return statusBadgeMap.EXPIRES_TODAY.label;
+    case "EXPIRING_SOON": return `即期 · 剩 ${days} 天`;
+    case "NORMAL": return `剩 ${days} 天`;
+    default: return statusBadgeMap[status].label;
+  }
+}

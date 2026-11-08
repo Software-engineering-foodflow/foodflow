@@ -20,6 +20,7 @@ export const queryKeys = {
     list: (filters: { search: string; storageType: string; status: string; page: number }) =>
       ["storage-locations", filters] as const,
     active: ["storage-locations", "active"],
+    summary: ["storage-locations", "summary"],
     batches: (locationId: number) => ["storage-locations", "batches", locationId] as const,
   },
   goodsReceipt: { all: ["goods-receipt"] },
@@ -32,6 +33,8 @@ export const queryKeys = {
 } as const;
 
 const STOCK_QUERY_ROOTS = [
+  // 位置清單與摘要含批次數、最近到期與效期統計，庫存變動後也要更新。
+  queryKeys.storageLocations.all,
   queryKeys.inventory.all,
   queryKeys.alerts.all,
   queryKeys.issue.all,

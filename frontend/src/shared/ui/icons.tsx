@@ -106,3 +106,8 @@ export const ToolIcon = (props: IconProps) => <Icon {...props}>
 export const SproutIcon = (props: IconProps) => <Icon {...props}>
   <path d="M12 21v-9" /><path d="M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2.5-5-6-5 0 3 2.5 5 6 5z" />
 </Icon>;
+
+/** 側欄收合與展開。 */
+export const SidebarIcon = (props: IconProps) => <Icon {...props}>
+  <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16M14 10l-2 2 2 2" />
+</Icon>;

@@ -145,7 +145,8 @@ describe("invalidateStockQueries", () => {
 
     const invalidated = invalidate.mock.calls.map(([filters]) => filters?.queryKey?.[0]);
     expect(invalidated.sort()).toEqual(
-      ["alerts", "goods-receipt", "inventory", "issue", "reports", "stocktake", "waste"].sort(),
+      ["alerts", "goods-receipt", "inventory", "issue", "reports", "stocktake", "storage-locations", "waste"]
+        .sort(),
     );
   });
 
