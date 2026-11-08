@@ -9,9 +9,6 @@ const placeholders = [
   [routes.inventory, "庫存", "ChiaJungTien", "FR-08、FR-09"],
   [routes.goodsReceipts, "進貨", "ChiaJungTien", "FR-06、FR-07"],
   [routes.issues, "領用", "黃予岑 Ken", "FR-10、FR-11"],
-  [routes.wasteRecords, "報廢", "郭明儒", "FR-15"],
-  [routes.stocktakes, "盤點", "郭明儒", "FR-16"],
-  [routes.reports, "異動與統計", "郭明儒", "FR-17、FR-18"],
   [routes.ingredients, "食材", "謝文佳", "FR-03"],
   [routes.ingredientCategories, "分類", "謝文佳", "FR-03"],
   [routes.suppliers, "供應商", "謝文佳", "FR-04"],
@@ -19,6 +16,11 @@ const placeholders = [
 ] as const;
 
 describe("router", () => {
+  it.each([[routes.wasteRecords, "報廢"], [routes.reports, "異動與統計"], [routes.stocktakes, "盤點"]])("mounts implemented %s", async (path, title) => {
+    renderApp(path);
+    expect(await screen.findByRole("heading", { level: 1, name: title })).toBeTruthy();
+    expect(screen.queryByText("此功能由 郭明儒 負責，開發中")).toBeNull();
+  });
   it.each(placeholders)("mounts %s as the %s placeholder", async (path, title, owner, fr) => {
     renderApp(path);
     expect(await screen.findByRole("heading", { level: 1, name: title })).toBeTruthy();

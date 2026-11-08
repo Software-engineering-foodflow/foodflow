@@ -65,10 +65,10 @@ development_status:
   5-3-改選批次並記錄非-fefo-原因: backlog
   epic-5-retrospective: optional
 
-  epic-6: backlog
-  6-1-登記報廢: backlog
-  6-2-提供一鍵全數報廢: backlog
-  6-3-盤點調整: backlog
+  epic-6: in-progress
+  6-1-登記報廢: in-progress # 已實作；真實 PostgreSQL／人工驗收待驗
+  6-2-提供一鍵全數報廢: in-progress # 共用 hook/dialog 已交付；預警接入待隊友
+  6-3-盤點調整: in-progress # 嚴格舊預覽已實作；真DB與人工驗收待驗
   epic-6-retrospective: optional
 
   epic-7: backlog
@@ -79,10 +79,10 @@ development_status:
   7-5-設定預警天數: backlog
   epic-7-retrospective: optional
 
-  epic-8: backlog
-  8-1-查詢庫存異動: backlog
-  8-2-期初期末庫存統計: backlog
-  8-3-報廢分布與損失金額: backlog
+  epic-8: in-progress
+  8-1-查詢庫存異動: in-progress # 真實 PostgreSQL／人工驗收待驗
+  8-2-期初期末庫存統計: in-progress # 真實 PostgreSQL／人工驗收待驗
+  8-3-報廢分布與損失金額: in-progress # 真實 PostgreSQL／人工驗收待驗
   epic-8-retrospective: optional
 
   epic-9: backlog
