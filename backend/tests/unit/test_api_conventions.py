@@ -16,6 +16,20 @@ from app.modules.auth.dependencies import get_current_employee
 PUBLIC_API_PATHS: set[str] = {"/api/v1/auth/login"}
 # 正式 app 的完整路由；新增端點時要同步更新。
 PRODUCTION_API_ROUTES: set[tuple[str, str]] = {
+    ("GET", "/api/v1/inventory"),
+    ("GET", "/api/v1/inventory/options/{kind}"),
+    ("GET", "/api/v1/inventory/{ingredient_id}/batches"),
+    ("GET", "/api/v1/inventory/batches/{batch_id}"),
+    ("GET", "/api/v1/inventory/batches/{batch_id}/transactions"),
+    ("GET", "/api/v1/inventory/batches/{batch_id}/location-changes"),
+    ("GET", "/api/v1/goods-receipts/options/{kind}"),
+    ("POST", "/api/v1/goods-receipts"),
+    ("GET", "/api/v1/goods-receipts/{receipt_id}"),
+    ("PATCH", "/api/v1/goods-receipts/{receipt_id}"),
+    ("DELETE", "/api/v1/goods-receipts/{receipt_id}"),
+    ("POST", "/api/v1/goods-receipts/{receipt_id}/confirm"),
+    ("GET", "/api/v1/goods-receipts"),
+    ("POST", "/api/v1/goods-receipts/{receipt_id}/reverse"),
     ("GET", "/health"),
     ("POST", "/api/v1/auth/login"),
     ("GET", "/api/v1/auth/me"),

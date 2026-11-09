@@ -6,8 +6,7 @@ import { renderApp } from "../test/renderApp";
 
 const placeholders = [
   [routes.home, "預警首頁", "謝文佳", "FR-12、FR-13、FR-14"],
-  [routes.inventory, "庫存", "ChiaJungTien", "FR-08、FR-09"],
-  [routes.goodsReceipts, "進貨", "ChiaJungTien", "FR-06、FR-07"],
+
   [routes.issues, "領用", "黃予岑 Ken", "FR-10、FR-11"],
   [routes.wasteRecords, "報廢", "郭明儒", "FR-15"],
   [routes.stocktakes, "盤點", "郭明儒", "FR-16"],
@@ -39,7 +38,7 @@ describe("router", () => {
     ["/goods-receipts/new?ingredient_id=5", "進貨"],
   ])("lands alert action %s on the %s page and marks it active", async (path, title) => {
     renderApp(path);
-    expect(await screen.findByRole("heading", { level: 1, name: title })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 1, name: title === "進貨" ? "新增進貨草稿" : title })).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: "主要導覽" });
     expect(within(nav).getByRole("link", { name: title }).getAttribute("aria-current")).toBe("page");
   });
@@ -51,8 +50,22 @@ describe("router", () => {
     expect(screen.getByRole("button", { name: "登出" })).toBeTruthy();
   });
 
+  it("mounts the inventory query with readonly filters", async () => {
+    renderApp(routes.inventory);
+    expect(await screen.findByRole("heading", { level: 1, name: "庫存" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "食材名稱" })).toBeTruthy();
+    expect(screen.getByText(/低庫存依全店可用量判定/)).toBeTruthy();
+  });
+
   it("still mounts the employee page", async () => {
     renderApp(routes.employees);
     expect(await screen.findByRole("heading", { level: 1, name: "員工帳號" })).toBeTruthy();
+  });
+
+  it("mounts the goods receipt entry with draft creation and known-number navigation", async () => {
+    renderApp(routes.goodsReceipts);
+    expect(await screen.findByRole("heading", { level: 1, name: "進貨" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "建立進貨草稿" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "開啟進貨單" })).toBeTruthy();
   });
 });

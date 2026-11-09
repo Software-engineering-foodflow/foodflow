@@ -160,6 +160,196 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/goods-receipts/options/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Options */
+        get: operations["options_api_v1_goods_receipts_options__kind__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goods-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Receipts */
+        get: operations["list_receipts_api_v1_goods_receipts_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_goods_receipts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goods-receipts/{receipt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["get_api_v1_goods_receipts__receipt_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete */
+        delete: operations["delete_api_v1_goods_receipts__receipt_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update */
+        patch: operations["update_api_v1_goods_receipts__receipt_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/goods-receipts/{receipt_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm */
+        post: operations["confirm_api_v1_goods_receipts__receipt_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goods-receipts/{receipt_id}/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reverse */
+        post: operations["reverse_api_v1_goods_receipts__receipt_id__reverse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Overview */
+        get: operations["overview_api_v1_inventory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/options/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Options */
+        get: operations["options_api_v1_inventory_options__kind__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Batch */
+        get: operations["batch_api_v1_inventory_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/batches/{batch_id}/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transactions */
+        get: operations["transactions_api_v1_inventory_batches__batch_id__transactions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/batches/{batch_id}/location-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Location Changes */
+        get: operations["location_changes_api_v1_inventory_batches__batch_id__location_changes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/{ingredient_id}/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Batches */
+        get: operations["batches_api_v1_inventory__ingredient_id__batches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -290,6 +480,11 @@ export interface components {
             error: components["schemas"]["ErrorBody"];
         };
         /**
+         * ExpiryStatus
+         * @enum {string}
+         */
+        ExpiryStatus: "EXPIRED" | "EXPIRES_TODAY" | "EXPIRING_SOON" | "NORMAL";
+        /**
          * GoodsReceiptStatus
          * @enum {string}
          */
@@ -306,6 +501,218 @@ export interface components {
              * @enum {string}
              */
             database: "ok" | "unavailable";
+        };
+        /** InventoryBatchList */
+        InventoryBatchList: {
+            /** Items */
+            items: components["schemas"]["InventoryBatchResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Ingredient Id */
+            ingredient_id: string;
+            /** Ingredient Name */
+            ingredient_name: string;
+            /** Unit */
+            unit: string;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /** Warning Days */
+            warning_days: number;
+        };
+        /** InventoryBatchResponse */
+        InventoryBatchResponse: {
+            /** Id */
+            id: string;
+            /** Batch Number */
+            batch_number: string;
+            /** Ingredient Id */
+            ingredient_id: string;
+            /** Ingredient Name */
+            ingredient_name: string;
+            /** Unit */
+            unit: string;
+            /** Source Item Id */
+            source_item_id: string;
+            /** Receipt Id */
+            receipt_id: string;
+            /** Receipt Number */
+            receipt_number: string;
+            receipt_status: components["schemas"]["GoodsReceiptStatus"];
+            /** Supplier Id */
+            supplier_id: string;
+            /** Supplier Name */
+            supplier_name: string;
+            /**
+             * Received Date
+             * Format: date
+             */
+            received_date: string;
+            /**
+             * Expiry Date
+             * Format: date
+             */
+            expiry_date: string;
+            /** Days Until Expiry */
+            days_until_expiry: number;
+            expiry_status: components["schemas"]["ExpiryStatus"];
+            /** Location Id */
+            location_id: string;
+            /** Location Name */
+            location_name: string;
+            /** Initial Quantity */
+            initial_quantity: string;
+            /** Remaining Quantity */
+            remaining_quantity: string;
+            /** Is Depleted */
+            is_depleted: boolean;
+        };
+        /** InventoryList */
+        InventoryList: {
+            /** Items */
+            items: components["schemas"]["InventoryStock"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /** Warning Days */
+            warning_days: number;
+        };
+        /** InventoryLocationChange */
+        InventoryLocationChange: {
+            /** Id */
+            id: string;
+            /** From Location Id */
+            from_location_id: string;
+            /** From Location Name */
+            from_location_name: string;
+            /** To Location Id */
+            to_location_id: string;
+            /** To Location Name */
+            to_location_name: string;
+            /** Operator Id */
+            operator_id: string;
+            /** Operator Name */
+            operator_name: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason: string;
+        };
+        /** InventoryLocationChangeList */
+        InventoryLocationChangeList: {
+            /** Items */
+            items: components["schemas"]["InventoryLocationChange"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** InventoryOptionList */
+        InventoryOptionList: {
+            /** Items */
+            items: components["schemas"]["InventoryOptionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** InventoryOptionResponse */
+        InventoryOptionResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** InventoryStock */
+        InventoryStock: {
+            /** Ingredient Id */
+            ingredient_id: string;
+            /** Ingredient Name */
+            ingredient_name: string;
+            /** Category Id */
+            category_id: string;
+            /** Category Name */
+            category_name: string;
+            /** Unit */
+            unit: string;
+            storage_method: components["schemas"]["StorageType"];
+            /** Safety Stock Quantity */
+            safety_stock_quantity: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Physical Quantity */
+            physical_quantity: string;
+            /** Available Quantity */
+            available_quantity: string;
+            /** Expired Quantity */
+            expired_quantity: string;
+            /** Store Available Quantity */
+            store_available_quantity: string;
+            /** Is Low Stock */
+            is_low_stock: boolean;
+            /** Shortfall Quantity */
+            shortfall_quantity: string;
+        };
+        /** InventoryTransactionList */
+        InventoryTransactionList: {
+            /** Items */
+            items: components["schemas"]["InventoryTransactionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** InventoryTransactionResponse */
+        InventoryTransactionResponse: {
+            /** Id */
+            id: string;
+            type: components["schemas"]["TransactionType"];
+            /** Quantity Delta */
+            quantity_delta: string;
+            /** Quantity Before */
+            quantity_before: string;
+            /** Quantity After */
+            quantity_after: string;
+            /** Operator Id */
+            operator_id: string;
+            /** Operator Name */
+            operator_name: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason: string;
+            /** Is Non Fefo */
+            is_non_fefo: boolean;
+            /** Reverses Transaction Id */
+            reverses_transaction_id: string | null;
         };
         /** LocationBatchList */
         LocationBatchList: {
@@ -356,6 +763,138 @@ export interface components {
         PasswordReset: {
             /** Password */
             password: string;
+        };
+        /** ReceiptDraftRequest */
+        ReceiptDraftRequest: {
+            /** Supplier Id */
+            supplier_id: number;
+            /**
+             * Receipt Date
+             * Format: date
+             */
+            receipt_date: string;
+            /** Items */
+            items: components["schemas"]["ReceiptItemRequest"][];
+        };
+        /** ReceiptItemRequest */
+        ReceiptItemRequest: {
+            /** Id */
+            id?: number | null;
+            /** Ingredient Id */
+            ingredient_id: number;
+            /** Quantity */
+            quantity?: string | null;
+            /** Unit Price */
+            unit_price?: string | null;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /** Location Id */
+            location_id?: number | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** ReceiptItemResponse */
+        ReceiptItemResponse: {
+            /** Id */
+            id: number;
+            /** Ingredient Id */
+            ingredient_id: number;
+            /** Ingredient Name */
+            ingredient_name: string;
+            /** Batch Id */
+            batch_id?: number | null;
+            /** Batch Number */
+            batch_number?: string | null;
+            /** Unit */
+            unit: string;
+            /** Quantity */
+            quantity: string | null;
+            /** Unit Price */
+            unit_price: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Location Id */
+            location_id: number | null;
+            /** Location Name */
+            location_name: string | null;
+            /** Note */
+            note: string | null;
+        };
+        /** ReceiptList */
+        ReceiptList: {
+            /** Items */
+            items: components["schemas"]["ReceiptResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** ReceiptOption */
+        ReceiptOption: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Unit */
+            unit?: string | null;
+            /** Code */
+            code?: string | null;
+        };
+        /** ReceiptOptionList */
+        ReceiptOptionList: {
+            /** Items */
+            items: components["schemas"]["ReceiptOption"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** ReceiptResponse */
+        ReceiptResponse: {
+            /** Id */
+            id: number;
+            /** Receipt Number */
+            receipt_number: string;
+            /** Supplier Id */
+            supplier_id: number;
+            /** Supplier Name */
+            supplier_name: string;
+            /**
+             * Receipt Date
+             * Format: date
+             */
+            receipt_date: string;
+            status: components["schemas"]["GoodsReceiptStatus"];
+            /** Created By Id */
+            created_by_id: number;
+            /** Created By Name */
+            created_by_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /** Items */
+            items: components["schemas"]["ReceiptItemResponse"][];
+            /** Reversed At */
+            reversed_at?: string | null;
+            /** Reversed By Id */
+            reversed_by_id?: number | null;
+            /** Reversed By Name */
+            reversed_by_name?: string | null;
+            /** Reversal Reason */
+            reversal_reason?: string | null;
+        };
+        /** ReceiptReverseRequest */
+        ReceiptReverseRequest: {
+            /** Reason */
+            reason: string;
         };
         /** StorageLocationCreate */
         StorageLocationCreate: {
@@ -410,6 +949,11 @@ export interface components {
          * @enum {string}
          */
         StorageType: "REFRIGERATED" | "FROZEN" | "AMBIENT";
+        /**
+         * TransactionType
+         * @enum {string}
+         */
+        TransactionType: "RECEIPT" | "ISSUE" | "WASTE" | "ADJUSTMENT" | "REVERSAL";
     };
     responses: never;
     parameters: never;
@@ -1294,6 +1838,1108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LocationBatchResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    options_api_v1_goods_receipts_options__kind__get: {
+        parameters: {
+            query?: {
+                search?: string;
+                include_inactive?: boolean;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                kind: "suppliers" | "ingredients" | "locations";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptOptionList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_receipts_api_v1_goods_receipts_get: {
+        parameters: {
+            query?: {
+                receipt_number?: string;
+                date_from?: string | null;
+                date_to?: string | null;
+                supplier_id?: number | null;
+                ingredient_id?: number | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_api_v1_goods_receipts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_goods_receipts__receipt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_api_v1_goods_receipts__receipt_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_api_v1_goods_receipts__receipt_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    confirm_api_v1_goods_receipts__receipt_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    reverse_api_v1_goods_receipts__receipt_id__reverse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptReverseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    overview_api_v1_inventory_get: {
+        parameters: {
+            query?: {
+                search?: string;
+                category_id?: number | null;
+                storage_method?: components["schemas"]["StorageType"] | null;
+                location_id?: number | null;
+                status?: ("NORMAL" | "EXPIRING_SOON" | "EXPIRES_TODAY" | "EXPIRED" | "LOW_STOCK") | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    options_api_v1_inventory_options__kind__get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                kind: "categories" | "locations";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryOptionList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    batch_api_v1_inventory_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryBatchResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    transactions_api_v1_inventory_batches__batch_id__transactions_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryTransactionList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    location_changes_api_v1_inventory_batches__batch_id__location_changes_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryLocationChangeList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    batches_api_v1_inventory__ingredient_id__batches_get: {
+        parameters: {
+            query?: {
+                location_id?: number | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                ingredient_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryBatchList"];
                 };
             };
             /** @description Unauthorized */

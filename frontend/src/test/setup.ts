@@ -8,12 +8,15 @@ globalThis.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 
 if (typeof window !== "undefined") {
+  // Mantine autosizing textareas listen for font loading in real browsers.
+  Object.defineProperty(document, "fonts", { configurable: true, value: new EventTarget() });
   // MantineProvider 需要 matchMedia，jsdom 沒有提供。
   Object.defineProperty(window, "matchMedia", {
     writable: true,
