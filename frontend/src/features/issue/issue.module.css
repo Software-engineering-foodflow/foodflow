@@ -1,0 +1,58 @@
+/* 領用頁的動態效果，與儲存位置頁（StorageLocationsPage.module.css）同一套節奏。 */
+
+/* 進場：淡入並由下往上滑入；清單項目以 --delay 依序出現。 */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  /* 終點不寫 opacity，動畫結束後保留元素原本的透明度（已沖銷的紀錄是淡化的）。 */
+  to {
+    transform: none;
+  }
+}
+
+/* 展開：原因欄、非 FEFO 標記、提示訊息出現時由上往下展開。 */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.enter {
+  animation: rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.reveal {
+  animation: reveal 340ms ease-out both;
+}
+
+/* 可點擊的按鈕與分類：滑過稍微浮起，按下時回彈，讓觸控也有回饋。 */
+.press {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.press:hover:not(:disabled):not([data-disabled]) {
+  transform: translateY(-1px);
+}
+.press:active:not(:disabled):not([data-disabled]) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* 尊重系統「減少動態效果」設定。 */
+@media (prefers-reduced-motion: reduce) {
+  .enter,
+  .reveal {
+    animation: none;
+  }
+  .press,
+  .press:hover,
+  .press:active {
+    transition: none;
+    transform: none;
+  }
+}

@@ -70,12 +70,12 @@ DEMO_CATEGORIES = (
 DEMO_INGREDIENTS = (
     ("雞胸肉", "MEAT", "公斤", StorageType.REFRIGERATED, "10"),
     ("豬里肌", "MEAT", "公斤", StorageType.REFRIGERATED, "5"),
-    ("鮭魚片", "MEAT", "公斤", StorageType.REFRIGERATED, "3"),
+    ("鮭魚片", "MEAT", "包", StorageType.REFRIGERATED, "3"),  # 真空包裝，約 1 公斤一包
     ("高麗菜", "VEG", "公斤", StorageType.REFRIGERATED, "8"),
     ("雞蛋", "DAIRY", "顆", StorageType.REFRIGERATED, "60"),
     ("鮮奶", "DAIRY", "公升", StorageType.REFRIGERATED, "5"),
     ("鮮奶油", "DAIRY", "公升", StorageType.REFRIGERATED, "2"),
-    ("白米", "DRY", "公斤", StorageType.AMBIENT, "20"),
+    ("白米", "DRY", "袋", StorageType.AMBIENT, "1"),  # 約 20 公斤一袋，可領 0.5 袋
     ("醬油", "DRY", "瓶", StorageType.AMBIENT, "4"),
     ("沙拉油", "DRY", "公升", StorageType.AMBIENT, "10"),
 )
@@ -102,6 +102,8 @@ def _demo_receipts(warning_days: int) -> tuple[_DemoReceipt, ...]:
 
     鮮奶另有正常批次、低庫存只落在雞蛋與沙拉油，讓每種情境都能單獨展示。
     雞胸肉兩批是 SRS 第 9 節端到端示例的起點（T＝3 時分別為 1 天與 7 天後到期）。
+    豬里肌、高麗菜、白米、雞蛋也各有兩個可用批次，才能示範改選批次（非 FEFO）；
+    新增的都是正常批次，雞蛋加總後仍低於安全庫存量，不改變上述情境。
     """
     last_soon_day = max(warning_days, 1)
     normal = warning_days + 1
@@ -112,7 +114,8 @@ def _demo_receipts(warning_days: int) -> tuple[_DemoReceipt, ...]:
             (
                 _DemoItem("鮮奶", "6", "65", -2, "COLD-A"),
                 _DemoItem("鮮奶油", "3", "210", 0, "COLD-A"),
-                _DemoItem("白米", "50", "42", normal + 86, "DRY-1"),
+                _DemoItem("白米", "3", "840", normal + 86, "DRY-1"),
+                _DemoItem("白米", "2", "880", normal + 120, "DRY-1"),
                 _DemoItem("醬油", "10", "85", normal + 176, "DRY-1"),
                 _DemoItem("沙拉油", "8", "75", normal + 176, "DRY-1"),
             ),
@@ -124,9 +127,12 @@ def _demo_receipts(warning_days: int) -> tuple[_DemoReceipt, ...]:
                 _DemoItem("雞胸肉", "5", "120", 1, "COLD-A"),
                 _DemoItem("雞胸肉", "8", "115", normal + 3, "COLD-A"),
                 _DemoItem("豬里肌", "12", "180", normal + 4, "COLD-A"),
+                _DemoItem("豬里肌", "6", "185", normal + 9, "COLD-A"),
                 _DemoItem("鮭魚片", "4", "420", last_soon_day, "COLD-A"),
                 _DemoItem("高麗菜", "15", "35", normal + 2, "COLD-A"),
+                _DemoItem("高麗菜", "10", "32", normal + 6, "COLD-A"),
                 _DemoItem("雞蛋", "30", "6", normal + 10, "COLD-A"),
+                _DemoItem("雞蛋", "20", "6", normal + 18, "COLD-A"),
                 _DemoItem("鮮奶", "12", "68", normal + 6, "COLD-A"),
             ),
         ),

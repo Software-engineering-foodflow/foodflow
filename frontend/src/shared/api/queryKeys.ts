@@ -25,7 +25,12 @@ export const queryKeys = {
   },
   goodsReceipt: { all: ["goods-receipt"] },
   inventory: { all: ["inventory"] },
-  issue: { all: ["issue"] },
+  issue: {
+    all: ["issue"],
+    ingredients: ["issue", "ingredients"],
+    recent: ["issue", "recent"],
+    suggestion: (body: unknown) => ["issue", "suggestion", body] as const,
+  },
   alerts: { all: ["alerts"] },
   waste: { all: ["waste"] },
   stocktake: { all: ["stocktake"] },

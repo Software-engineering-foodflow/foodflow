@@ -8,7 +8,6 @@ const placeholders = [
   [routes.home, "預警首頁", "謝文佳", "FR-12、FR-13、FR-14"],
   [routes.inventory, "庫存", "ChiaJungTien", "FR-08、FR-09"],
   [routes.goodsReceipts, "進貨", "ChiaJungTien", "FR-06、FR-07"],
-  [routes.issues, "領用", "黃予岑 Ken", "FR-10、FR-11"],
   [routes.wasteRecords, "報廢", "郭明儒", "FR-15"],
   [routes.stocktakes, "盤點", "郭明儒", "FR-16"],
   [routes.reports, "異動與統計", "郭明儒", "FR-17、FR-18"],

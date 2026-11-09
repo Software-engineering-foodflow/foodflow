@@ -395,3 +395,17 @@ def test_kept_tables_are_the_only_ones_not_counted_as_business_data() -> None:
         table.name for table in cli.DEMO_RESET_TABLES
     }
     assert kept == KEPT_TABLES
+
+
+def test_several_ingredients_have_two_issuable_batches_for_non_fefo_demos(session: Session) -> None:
+    """改選批次（非 FEFO）至少要有兩個可用批次才示範得出來。"""
+    assert main(["seed-demo"]) == 0
+
+    rows = session.execute(
+        select(Ingredient.name, func.count(InventoryBatch.id))
+        .join(InventoryBatch, InventoryBatch.ingredient_id == Ingredient.id)
+        .where(InventoryBatch.remaining_quantity > 0, InventoryBatch.expiry_date >= FIXED_TODAY)
+        .group_by(Ingredient.name)
+    )
+    multi = {name for name, count in rows if count >= 2}
+    assert {"雞胸肉", "豬里肌", "高麗菜", "白米", "雞蛋"} <= multi
