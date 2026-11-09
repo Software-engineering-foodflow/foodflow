@@ -1,8 +1,8 @@
 # AI 對話紀錄：以 docs/design/storage-demo.html作為視覺基準，為食…
 
 - 成員：黃予岑
-- 時間：2026-11-08 14:05 ～ 2026-11-09 09:48
-- 分支：feat/storage-location-redesign
+- 時間：2026-11-08 14:05 ～ 2026-11-09 15:10
+- 分支：feat/ops-backup-restore
 - AI 工具：Claude Code
 - Session：097d9c94-3ad1-405a-95cd-d717f693fe8d
 
@@ -1395,3 +1395,233 @@ All checks pass. I'll commit the visual tweaks first, then run `/ship` to push a
 - 🔧 `Skill`：ship
 - 🔧 `Bash`：git rev-parse --abbrev-ref HEAD && git status --short && grep -n -iE '儲存位置|storage' _bmad-output/planning-artifacts/epics.md | head -8
 - 🔧 `Bash`：cat > /tmp/prbody.md <<'EOF' ## 做了什麼 - 儲存位置頁照 `docs/design/storage-demo.html`（v=6）改版：麵包屑、4 張摘要卡、單列工具列、表格欄位（代碼／名稱／類型／批次／最近到期／狀態），編輯與刪除收進列尾「⋯」選單；1024×768 也用表格，修掉基…
+The branch is pushed, but `ship.mjs` couldn't find `gh`, so I'll open the PR with `gh` directly.
+
+- 🔧 `Bash`：gh pr create --base main --head feat/storage-location-redesign --title "feat(storage-location): 照基準頁改版儲存位置頁與全站版面" --body-file /tmp/prbody.md 2>&1 | tail -2; git…
+PR 開好了：https://github.com/Software-engineering-foodflow/foodflow/pull/20
+
+**這次做的**
+- 側欄收合鈕的圖示改成簡單的雙箭頭（« / »），按鈕從 44px 縮小到 30px。按鈕周圍另外留了一圈看不見的範圍，可以點的地方還是 44px，符合觸控規範。DESIGN.md 也已經記下這個做法。
+- 前端全部檢查都通過，包括 217 個測試、lint、typecheck 和 build。
+- 這兩輪的漸層調整和收合鈕一起 commit 成 `795d0ac`。
+
+**開 PR 時遇到的問題**
+- 分支推上去了，AI 使用紀錄也產生了，並 commit 成 `c40b7cc`，所以 PR 標題就是這個 commit 的訊息。
+- `ship.mjs` 說找不到 `gh`，沒有自動開 PR，我改成直接用 `gh pr create` 開。但同一台電腦上 `gh` 其實能用，可能是腳本在 Windows 上找不到它的路徑，之後可以修。
+
+**還要你處理的**
+- **指定 reviewer**：PR 需要 1 人 approve 才能合併。
+- **確認 AI 使用紀錄**：`docs/ai-evidence/20261108-mintguesss-097d9c94/rows.md` 是草稿，要補上「人工判斷與修正」和「採用程度」，再把狀態改成「已確認」。提醒一下，每週要確認一次自己的 `docs/ai-evidence/*/rows.md`。
+- **8001 的伺服器還開著**：要關的話跟我說。
+
+
+## 第 33 輪（2026-11-09 09:52）
+
+### 我們
+
+有點怪 這是改整個系統的畫面 分支名字不太對 然後儲存頁上面框框太大了 應該符合圖示高度 然後下面批號	剩餘量	到期日	狀態擠在一起 左邊空超大 平均分配一下空間 另外擴充下資料包 確保所有情況都能發生
+
+### AI
+
+This round has four items: rename the branch, shrink the summary cards, rebalance the expanded batch-table columns, and expand the demo data. I'll read the relevant code first.
+
+- 🔧 `Bash`：wc -l frontend/src/features/storage_location/pages/StorageLocationsPage.tsx && grep -n -iE 'function |SummaryCard|批號|剩餘量|Table\.Th|w=|width' frontend/src/featur…
+- 🔧 `Bash`：sed -n 60,170p frontend/src/features/storage_location/pages/StorageLocationsPage.tsx
+- 🔧 `Bash`：grep -n 'tableLayout\|layout' frontend/src/shared/ui/DataTable.tsx | head; grep -n 'seed' backend/app/cli.py | head; ls backend/app/ | head -30; grep -rln 'seed…
+- 🔧 `Bash`：sed -n 40,330p backend/app/cli.py
+- 🔧 `Bash`：grep -n 'def ' backend/app/modules/inventory/ledger.py | head; grep -n 'is_active\|class StorageType' -A0 backend/app/db/models/*.py | grep -i 'location\|Storag…
+- 🔧 `Bash`：sed -n 60,200p backend/tests/integration/test_seed_demo.py; sed -n 128,175p README.md
+Next I'm expanding the demo data. I'm checking the location model's fields and how the low-stock query treats ingredients with no stock.
+
+- 🔧 `Bash`：grep -rn 'class StorageLocation' -A14 backend/app/db/models/ | grep -n 'Mapped' ; grep -n 'def stock_level_stmt' -A25 -r backend/app | grep -n -i 'join\|outer' …
+- 🔧 `Bash`：grep -rn 'def stock_level_stmt' backend/app | head -2; f=$(grep -rln 'def stock_level_stmt' backend/app | head -1); grep -n 'def stock_level_stmt' -A30 $f | gre…
+Outer join confirmed: an ingredient with no batches shows up with 0 stock, so it can demo low stock. Now I'll update the seed data.
+
+- 🔧 `Bash`：python - <<'EOF' p='backend/app/cli.py' s=open(p,encoding='utf-8').read() rep=[ ('''DEMO_LOCATIONS = ( ("COLD-A", "冷藏庫 A", StorageType.REFRIGERATED, "廚房後方的走入式冷藏…
+Next I'll add a test that covers the storage-location scenarios.
+
+- 🔧 `Bash`：grep -n '^from\|^import' backend/tests/integration/test_seed_demo.py && cat >> backend/tests/integration/test_seed_demo.py <<'EOF' def test_storage_locations_co…
+- 🔧 `Bash`：sed -n 13,21p backend/tests/integration/test_seed_demo.py
+- 🔧 `Bash`：cd /c/Project/foodflow/backend && uv run pytest -q tests/integration/test_seed_demo.py 2>&1 | tail -5 && uv run ruff check . && uv run ruff format --check . | t…
+Seed tests pass. Next I'll update the README scenario table.
+
+- 🔧 `Bash`：cd /c/Project/foodflow && python - <<'EOF' p='README.md' s=open(p,encoding='utf-8').read() old_start=s.index('內容是 2 個儲存位置') old_end=s.index('- **日期：**') new='''…
+Next I'll compact the summary cards to icon height and spread the batch-table columns evenly.
+
+- 🔧 `Bash`：python - <<'EOF' p='frontend/src/features/storage_location/pages/StorageLocationsPage.tsx' s=open(p,encoding='utf-8').read() old=''' // 1024 寬度每張卡約 177px，內距與間距收…
+- 🔧 `PowerShell`：cd C:\Project\foodflow\frontend; npx vitest run 2>&1 | Select-Object -Last 4; npm run lint 2>&1 | Select-Object -Last 2; npm run typecheck 2>&1 | Select-Object …
+- 🔧 `PowerShell`：cd C:\Project\foodflow\frontend; npx vitest run 2>&1 | Select-String -Pattern 'FAIL|✗|×|AssertionError|Expected|Received|Unable to find' -Context 0,3 | Select-O…
+- 🔧 `Bash`：cd /c/Project/foodflow && sed -n 299,320p frontend/src/features/storage_location/pages/StorageLocationsPage.test.tsx
+The card structure changed, so `parentElement` no longer reaches the whole card. I'll switch the test to look up the whole card.
+
+- 🔧 `Bash`：python - <<'EOF' p='frontend/src/features/storage_location/pages/StorageLocationsPage.test.tsx' s=open(p,encoding='utf-8').read() old='const card = (label: stri…
+- 🔧 `PowerShell`：cd C:\Project\foodflow\frontend; npx vitest run src/features/storage_location 2>&1 | Select-Object -Last 4; npm run lint 2>&1 | Select-Object -Last 1; npm run t…
+I'll take screenshots to check the summary cards and expanded batch table.
+
+- 🔧 `Bash`：cd "C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/scratchpad" && head -30 redesign-shots.mjs; grep -n 'goto\|sc…
+- 🔧 `Bash`：cd /c/Project/foodflow && sed -n 30,75p "C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/scratchpad/redesign-shot…
+- 🔧 `Bash`：S="C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/scratchpad" && node "$S/redesign-shots.mjs" http://localhost:8…
+- 🔧 `Read`：C:\Project\foodflow\docs\design\screenshots\storage-locations-1366x768.png
+- 🔧 `Read`：C:\Project\foodflow\docs\design\screenshots\storage-locations-1024x768.png
+- 🔧 `Bash`：python - <<'EOF' p='frontend/src/features/storage_location/pages/StorageLocationsPage.tsx' s=open(p,encoding='utf-8').read() for a,b in [ ('return urgent ? `${s…
+- 🔧 `Bash`：python - <<'EOF' p='docs/design/DESIGN.md' s=open(p,encoding='utf-8').read() a='左側放 40px 圖示方塊，右側由上而下是標籤（`caption`、`text-muted`）、數值（`{typography.stat}`）、補充說明（`ca…
+- 🔧 `PowerShell`：cd C:\Project\foodflow\frontend; npx vitest run 2>&1 | Select-Object -Last 4; npm run lint 2>&1 | Select-Object -Last 1; npm run typecheck 2>&1 | Select-Object …
+- 🔧 `Bash`：cd /c/Project/foodflow && S="C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/scratchpad" && node "$S/redesign-sho…
+- 🔧 `Read`：C:\Project\foodflow\docs\design\screenshots\storage-locations-1024x768.png
+- 🔧 `Bash`：cd /c/Project/foodflow/backend && uv run pytest -q 2>&1 | tail -1 && cd .. && git add -A && git status --short && git commit -q -m "feat(ui): 摘要卡貼齊圖示高度、批次表欄寬平均分…
+Next I'll rename the branch to `feat/ui-site-redesign`. I'm using GitHub's branch-rename API, so PR #20 follows the new name automatically. Then I'll push the new commit and update the PR title.
+
+- 🔧 `Bash`：gh api -X POST repos/Software-engineering-foodflow/foodflow/branches/feat/storage-location-redesign/rename -f new_name=feat/ui-site-redesign -q .name && git bra…
+PR #20 was closed when the branch was renamed, and its head is still the old name, so I'll open a new PR with an updated title and description.
+
+- 🔧 `Bash`：python - <<'EOF' s=open('/tmp/prbody.md',encoding='utf-8').read() s=s.replace('''- 外觀微調：主要按鈕漸層加深、背景改為上方淡綠往下漸白、側欄收合鈕改成較小的雙箭頭（可點範圍仍是 44px）。''','''- 外觀微調：主要按鈕漸層加深、…
+- 🔧 `Bash`：S="C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/scratchpad" && gh pr view 20 --json body -q .body > "$S/prbody…
+四項都改好了，已推上去並開了新的 PR：https://github.com/Software-engineering-foodflow/foodflow/pull/21
+
+**1. 分支名稱**
+- 分支改名為 `feat/ui-site-redesign`，PR 標題改成 `feat(ui): 全站版面與儲存位置頁照基準頁改版`。
+- 我原本預期在 GitHub 上改分支名稱時，PR #20 會自動跟著改，結果 #20 被關閉了。所以另開 #21，說明裡註明它取代 #20。
+
+**2. 摘要卡**
+- 卡片高度現在貼齊 40px 圖示。卡片右側改成兩行：第一行「4 啟用中位置」，第二行補充說明。
+- 1024 寬度下補充說明原本會被截斷，所以「批次」縮成「批」，例如「6 批 · 1 今日到期」，跟表格裡的「4 批」一致。
+
+**3. 展開後的批次表**：食材、批號、剩餘量、到期日、狀態五欄各佔 20% 寬度，左邊不再空一大塊。截圖已更新，1024 和 1366 兩種寬度都沒有橫向捲動，文字也沒有被截斷。
+
+**4. 示範資料**
+
+| 新增 | 內容 |
+|---|---|
+| 位置 | 冷凍庫 FRZ-1、備料冷藏櫃 COLD-B（啟用但沒有庫存，用來看空狀態）、舊儲藏室 DRY-2（停用） |
+| 食材 | 冷凍蝦仁（一批過期）、冷凍水餃（一批即期）、醬油多一批即期、起司片（完全沒有庫存的低庫存） |
+
+- 冷藏、冷凍、常溫三種摘要卡都會出現要注意的批次。過期、今日到期、即期、正常、低庫存、停用、空位置這些情況都有資料。
+- README 的情境表已同步更新，也新增了一個測試，確認示範資料涵蓋這些情境。
+- 後端 464 個測試、前端 217 個測試，以及 lint、typecheck、build 都通過。
+
+**要你決定**：你目前開發用的資料庫還是舊的示範資料。要看到新資料，得在 `backend/` 執行 `uv run python -m app.cli seed-demo --reset`，但這會清掉帳號和預警設定以外的所有資料，包括你手動建的進貨單。所以我沒有自己跑，你確認可以清再執行，或叫我執行。
+
+**另外還有**
+- PR #21 需要指定 reviewer。
+- `docs/ai-evidence/20261108-mintguesss-097d9c94/rows.md` 是草稿，還要補上人工判斷並把狀態改成「已確認」。
+- 8001 的伺服器還開著，可以直接重新整理來看新的版面。
+
+
+## 第 34 輪（2026-11-09 10:15）
+
+### 我們
+
+類型	批次	最近到期	狀態	也往左擴展一點 2啟用中位置 這個數字太大了 然後全部類型和全部狀態打開沒動畫 領用頁面操作沒對齊沖銷 然後這個不需要留AI紀錄
+
+### AI
+
+- 🔧 `Bash`：sed -n 308,318p frontend/src/features/storage_location/pages/StorageLocationsPage.tsx; grep -n 'Select' frontend/src/features/storage_location/pages/StorageLoca…
+- 🔧 `Bash`：sed -n 64,125p frontend/src/features/issue/components/RecentIssues.tsx
+I need a screenshot of the 領用 page to see the misalignment, so I'll check which APIs the page calls.
+
+- 🔧 `Bash`：grep -n 'apiClient\|GET\|"/api\|get(' frontend/src/features/issue/api.ts | head; grep -n -A30 '"IssueRecordResponse"\|IssueRecordResponse: {' frontend/src/share…
+- 🔧 `Bash`：cat frontend/src/features/issue/api.ts | head -60; grep -n -B2 -A12 'IssueLineResponse: {' frontend/src/shared/api/schema.d.ts | grep -E '^\S*-? +[a-z_]+\??:'
+- 🔧 `Bash`：S="C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/scratchpad" && cat > "$S/issue-shot.mjs" <<'EOF' import { crea…
+- 🔧 `Read`：C:\Users\a0311\AppData\Local\Temp\claude\be45da8f3a9fb9cd\097d9c94-3ad1-405a-95cd-d717f693fe8d\scratchpad\issue-table-1366.png
+- 🔧 `Bash`：python - <<'EOF' def edit(p, pairs): s=open(p,encoding='utf-8').read() for a,b in pairs: assert a in s,(p,a); s=s.replace(a,b) open(p,'w',encoding='utf-8',newli…
+- 🔧 `Bash`：grep -n 'createTheme({' -A3 frontend/src/app/theme.ts
+- 🔧 `Bash`：sed -i '76a\ // 系統設定「減少動態」時略過 Mantine 元件的轉場（下拉選單、選單、對話框）。\n respectReducedMotion: true,' frontend/src/app/theme.ts && sed -n 75,80p frontend/src/app/theme.ts
+- 🔧 `PowerShell`：cd C:\Project\foodflow\frontend; npx vitest run 2>&1 | Select-Object -Last 4; npm run lint 2>&1 | Select-Object -Last 1; npm run typecheck 2>&1 | Select-Object …
+- 🔧 `PowerShell`：cd C:\Project\foodflow\frontend; npx vitest run 2>&1 | Select-String -Pattern '×|FAIL|Error:|Expected|Received' -Context 0,4 | Select-Object -First 10
+That failure was a timeout: the first ESLint test exceeded 5 seconds while the whole suite was running, which isn't related to this change. I'll rerun that file on its own to confirm.
+
+- 🔧 `PowerShell`：cd C:\Project\foodflow\frontend; npx vitest run tests/eslint-rules.test.ts 2>&1 | Select-Object -Last 4
+- 🔧 `Bash`：cd /c/Project/foodflow && S="C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/scratchpad" && node "$S/issue-shot.m…
+- 🔧 `Read`：C:\Users\a0311\AppData\Local\Temp\claude\be45da8f3a9fb9cd\097d9c94-3ad1-405a-95cd-d717f693fe8d\scratchpad\issue-table-1366.png
+- 🔧 `Read`：C:\Project\foodflow\docs\design\screenshots\storage-locations-1366x768.png
+The screenshots look right at both widths with nothing overflowing. Per your instruction I'm skipping the AI record: just a plain commit and push.
+
+- 🔧 `Bash`：git add -A && git status --short && git commit -q -m "style(ui): 位置表欄寬往左分散、摘要數字縮小、下拉選單加動畫、領用紀錄操作欄置中" && git push -q 2>&1 | tail -2; git log --oneline -1; gh pr …
+四項都改好了，已推上 PR #21（commit `e6f7507`）。照你說的，這次沒有產生 AI 紀錄。
+
+- **位置表欄寬**：「名稱」欄從原本約一半寬縮成約四分之一，類型、批次、最近到期、狀態四欄往左分散開。
+- **摘要卡數字**：從 22px 縮成 18px，跟旁邊的標籤大小比較協調。
+- **「全部類型」「全部狀態」下拉選單**：展開時會淡入並稍微放大，跟「⋯」選單一樣有動畫。我是在主題裡設定的，全站的下拉選單都會一起套用。另外開了一個設定：系統開啟「減少動態」時，Mantine 元件就不播放動畫，這也是全站生效。
+- **領用頁的「操作」欄**：原本標題靠右，按鈕文字卻偏左，所以對不齊。現在欄寬貼齊按鈕，標題、「沖銷」和「已沖銷」都置中，截圖確認上下對齊了。
+
+**驗證**
+- 前端 217 個測試、lint、typecheck、build 都通過。
+- 跑全部測試時，有一個 ESLint 規則測試超過 5 秒逾時。它跟這次改動無關，單獨重跑 40 個都通過。
+- 儲存位置頁在 1024 和 1366 兩種寬度都沒有橫向捲動或文字被截斷，截圖已更新。
+
+**要不要重灌開發資料庫？** 開發資料庫還沒重灌示範資料，`--reset` 會清掉帳號和預警設定以外的資料，要我執行再跟我說。8001 的伺服器還開著，重新整理就能看到這次的改動。
+
+
+## 第 35 輪（2026-11-09 10:29）
+
+### 我們
+
+好
+
+### AI
+
+- 🔧 `Bash`：cd /c/Project/foodflow/backend && uv run python -m app.cli seed-demo --reset 2>&1 | tail -4 && uv run python -m app.cli verify-stock 2>&1 | tail -1
+- 🔧 `Bash`：PYTHONIOENCODING=utf-8 uv run python -c " from sqlalchemy import select, func from app.db.session import get_session_factory from app.db.models import StorageLo…
+- 🔧 `Bash`：M=$(grep -n 'get_session_factory' app/cli.py | grep import | head -1 | sed 's/.*from \([a-z_.]*\) import.*/\1/'); PYTHONIOENCODING=utf-8 uv run python -c " from…
+開發資料庫已經用新的示範資料重灌好了，庫存核對也通過。重新整理 http://localhost:8001 就能看到。
+
+| 位置 | 類型 | 狀態 | 批次 |
+|---|---|---|---|
+| COLD-A 冷藏庫 A | 冷藏 | 啟用 | 12 批（有過期、今日到期、即期） |
+| COLD-B 備料冷藏櫃 | 冷藏 | 啟用 | 0 批，展開可看到空狀態 |
+| FRZ-1 冷凍庫 | 冷凍 | 啟用 | 4 批（有過期、即期） |
+| DRY-1 乾貨倉 | 常溫 | 啟用 | 5 批（有即期） |
+| DRY-2 舊儲藏室 | 常溫 | 停用 | 0 批 |
+
+食材現在有 13 種。起司片完全沒有庫存，在庫存頁和預警首頁會顯示成低庫存。帳號和預警設定都保留，原本的登入方式照舊。
+
+這些情況是照今天（2026-11-09）的日期算的。過幾天到期狀態會跟著變，要重現同樣的情況，再跑一次 `seed-demo --reset` 就行。
+
+
+## 第 36 輪（2026-11-09 14:25）
+
+### 我們
+
+<task-notification>
+<task-id>bj3otnlhv</task-id>
+<tool-use-id>toolu_016fqPbj9Z7BnY3AVWnkVVCp</tool-use-id>
+<output-file>C:\Users\a0311\AppData\Local\Temp\claude\be45da8f3a9fb9cd\097d9c94-3ad1-405a-95cd-d717f693fe8d\tasks\bj3otnlhv.output</output-file>
+<status>failed</status>
+<summary>Background command "Start backend serving built frontend on 8001" failed with exit code 127</summary>
+</task-notification>
+
+### AI
+
+- 🔧 `Bash`：tail -5 "C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/tasks/bj3otnlhv.output"
+The 8001 server stopped on its own; the log shows no error. I'll restart it so you can keep viewing.
+
+- 🔧 `Bash`：uv run uvicorn app.main:create_app --factory --port 8001
+- 🔧 `PowerShell`：Start-Sleep 4; (Invoke-WebRequest http://localhost:8001/health -UseBasicParsing).Content
+8001 的伺服器剛剛自己停了，記錄裡沒有錯誤訊息，我已經重新開好。重新整理 http://localhost:8001 就能繼續看，資料是剛重灌的新示範資料。
+
+
+## 第 37 輪（2026-11-09 15:09）
+
+### 我們
+
+<task-notification>
+<task-id>bqhm3c55x</task-id>
+<tool-use-id>toolu_01Le16UfFTRrVaAgYjorFDrN</tool-use-id>
+<output-file>C:\Users\a0311\AppData\Local\Temp\claude\be45da8f3a9fb9cd\097d9c94-3ad1-405a-95cd-d717f693fe8d\tasks\bqhm3c55x.output</output-file>
+<status>failed</status>
+<summary>Background command "Restart backend serving built frontend on 8001" failed with exit code 1</summary>
+</task-notification>
+
+### AI
+
+- 🔧 `Bash`：tail -8 "C:/Users/a0311/AppData/Local/Temp/claude/be45da8f3a9fb9cd/097d9c94-3ad1-405a-95cd-d717f693fe8d/tasks/bqhm3c55x.output"; netstat -ano | grep ':8001 .*LI…
+8001 的伺服器又停了，這次啟動正常、也回應過一次健康檢查，幾秒後就結束，記錄裡同樣沒有錯誤。前一次也是這樣無聲結束，看起來像是被外部關掉，例如你那邊關了它，或是環境回收了背景程式。
+
+我先不再自動重開，免得一直重複。要繼續看的話有兩個選擇：
+
+- **我再開一次**：跟我說就好，我會開在 8001。
+- **你自己開**：在 PowerShell 執行下面指令，視窗開著伺服器就不會被關掉。前端已經是最新的 build。
+  ```
+  cd C:\Project\foodflow\backend; uv run uvicorn app.main:create_app --factory --port 8001
+  ```
+

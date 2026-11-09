@@ -27,6 +27,8 @@
 | 2026-11-06 16:46 | 黃予岑 | feat/storage-location | 做 Story 2.1\ | 20 | [20261106-mintguesss-c53e7785](20261106-mintguesss-c53e7785/) |
 | 2026-11-07 02:40 | 黃予岑 | feat/storage-location | <task-notification> | 3 | [20261107-mintguesss-c200aef4](20261107-mintguesss-c200aef4/) |
 | 2026-11-07～11-08 | 謝文佳 | docs/b-requirements-analysis | B 文件需求分析與使用案例製作（文件節錄） | 22 | [20261107-joyjoy0122-01a1b6ac](20261107-joyjoy0122-01a1b6ac/) |
+| 2026-11-08 14:05 | 黃予岑 | feat/ops-backup-restore | 以 docs/design/storage-demo.html作為視覺基準，為食… | 37 | [20261108-mintguesss-097d9c94](20261108-mintguesss-097d9c94/) |
 | 2026-11-08 14:05 | 黃予岑 | feat/storage-location | /bmad-agent-dev | 1 | [20261108-mintguesss-8cbcef45](20261108-mintguesss-8cbcef45/) |
-| 2026-11-08 14:05 | 黃予岑 | feat/storage-location-redesign | 以 docs/design/storage-demo.html作為視覺基準，為食… | 32 | [20261108-mintguesss-097d9c94](20261108-mintguesss-097d9c94/) |
 | 2026-11-08 17:26 | 黃予岑 | feat/fefo-issue | <task-notification> | 11 | [20261108-mintguesss-35da92f7](20261108-mintguesss-35da92f7/) |
+| 2026-11-09 13:47 | 黃予岑 | docs/c-final | <pasted_content id="be60"> | 5 | [20261109-mintguesss-511b588d](20261109-mintguesss-511b588d/) |
+| 2026-11-09 14:12 | 黃予岑 | feat/ops-backup-restore | 核准並繼續 | 7 | [20261109-mintguesss-98f47363](20261109-mintguesss-98f47363/) |
