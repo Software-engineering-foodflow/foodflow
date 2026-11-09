@@ -301,15 +301,15 @@ describe("StorageLocationsPage", () => {
 
     expect(screen.getByRole("navigation", { name: "麵包屑" }).textContent).toBe("基本資料 / 儲存位置");
     const cards = within(await screen.findByLabelText("位置摘要"));
-    const card = (label: string) => within(cards.getByText(label).parentElement!);
+    const card = (label: string) => within(cards.getByText(label).closest<HTMLElement>("[data-summary-card]")!);
     await waitFor(() => expect(card("啟用中位置").getByText("4")).toBeTruthy());
     expect(card("啟用中位置").getByText("共 5 個 · 1 停用")).toBeTruthy();
     expect(card("冷藏").getByText("2")).toBeTruthy();
     // 今日到期優先於即期。
-    expect(card("冷藏").getByText("6 批次 · 1 今日到期")).toBeTruthy();
-    expect(card("冷凍").getByText("9 批次 · 2 即期")).toBeTruthy();
+    expect(card("冷藏").getByText("6 批 · 1 今日到期")).toBeTruthy();
+    expect(card("冷凍").getByText("9 批 · 2 即期")).toBeTruthy();
     // 只放最緊急的一項：過期優先於即期。
-    expect(card("常溫").getByText("5 批次 · 1 過期")).toBeTruthy();
+    expect(card("常溫").getByText("5 批 · 1 過期")).toBeTruthy();
   });
 
   it("guides admins to create the first location when there are none", async () => {

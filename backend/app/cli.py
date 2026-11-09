@@ -51,9 +51,14 @@ DEMO_RESET_TABLES = tuple(
 DEMO_OPERATOR_USERNAME = "demo-seed"
 DEMO_MASTER_DATA_AGE = timedelta(days=30)
 
+# 代碼、名稱、保存方式、說明、是否啟用。三種保存方式都有位置；COLD-B 啟用但沒有庫存（空狀態），
+# DRY-2 已停用（停用的位置不能有剩餘庫存，所以也沒有批次）。
 DEMO_LOCATIONS = (
-    ("COLD-A", "冷藏庫 A", StorageType.REFRIGERATED, "廚房後方的走入式冷藏庫"),
-    ("DRY-1", "乾貨倉", StorageType.AMBIENT, "常溫乾貨與調味料"),
+    ("COLD-A", "冷藏庫 A", StorageType.REFRIGERATED, "廚房後方的走入式冷藏庫", True),
+    ("COLD-B", "備料冷藏櫃", StorageType.REFRIGERATED, "出餐口旁的小型冷藏櫃，目前清空中", True),
+    ("FRZ-1", "冷凍庫", StorageType.FROZEN, "零下 18 度冷凍櫃", True),
+    ("DRY-1", "乾貨倉", StorageType.AMBIENT, "常溫乾貨與調味料", True),
+    ("DRY-2", "舊儲藏室", StorageType.AMBIENT, "改裝前的儲藏室，已停用", False),
 )
 DEMO_SUPPLIERS = (
     ("順發生鮮批發", "陳先生", "02-5550-0101"),
@@ -65,6 +70,7 @@ DEMO_CATEGORIES = (
     ("VEG", "蔬菜"),
     ("DAIRY", "乳品蛋類"),
     ("DRY", "乾貨調味"),
+    ("FROZ", "冷凍食品"),
 )
 # 名稱、分類代碼、單位、保存方式、安全庫存量
 DEMO_INGREDIENTS = (
@@ -78,6 +84,9 @@ DEMO_INGREDIENTS = (
     ("白米", "DRY", "袋", StorageType.AMBIENT, "1"),  # 約 20 公斤一袋，可領 0.5 袋
     ("醬油", "DRY", "瓶", StorageType.AMBIENT, "4"),
     ("沙拉油", "DRY", "公升", StorageType.AMBIENT, "10"),
+    ("冷凍蝦仁", "FROZ", "包", StorageType.FROZEN, "4"),
+    ("冷凍水餃", "FROZ", "盒", StorageType.FROZEN, "3"),
+    ("起司片", "DAIRY", "包", StorageType.REFRIGERATED, "2"),  # 沒有任何批次：庫存 0 的低庫存
 )
 
 
@@ -100,7 +109,9 @@ class _DemoReceipt:
 def _demo_receipts(warning_days: int) -> tuple[_DemoReceipt, ...]:
     """到期日隨預警天數 T 計算，否則 T 調大後「正常」批次會全部變成即期。
 
-    鮮奶另有正常批次、低庫存只落在雞蛋與沙拉油，讓每種情境都能單獨展示。
+    鮮奶與冷凍蝦仁另有正常批次、低庫存只落在雞蛋、沙拉油與起司片（完全沒有庫存），
+    讓每種情境都能單獨展示。冷藏、冷凍、常溫三類位置各自都有需要注意的批次（過期、今日到期或即期），
+    儲存位置頁的摘要卡與「最近到期」欄才會出現每種狀態。
     雞胸肉兩批是 SRS 第 9 節端到端示例的起點（T＝3 時分別為 1 天與 7 天後到期）。
     豬里肌、高麗菜、白米、雞蛋也各有兩個可用批次，才能示範改選批次（非 FEFO）；
     新增的都是正常批次，雞蛋加總後仍低於安全庫存量，不改變上述情境。
@@ -118,6 +129,7 @@ def _demo_receipts(warning_days: int) -> tuple[_DemoReceipt, ...]:
                 _DemoItem("白米", "2", "880", normal + 120, "DRY-1"),
                 _DemoItem("醬油", "10", "85", normal + 176, "DRY-1"),
                 _DemoItem("沙拉油", "8", "75", normal + 176, "DRY-1"),
+                _DemoItem("冷凍蝦仁", "2", "260", -3, "FRZ-1"),
             ),
         ),
         _DemoReceipt(
@@ -134,6 +146,10 @@ def _demo_receipts(warning_days: int) -> tuple[_DemoReceipt, ...]:
                 _DemoItem("雞蛋", "30", "6", normal + 10, "COLD-A"),
                 _DemoItem("雞蛋", "20", "6", normal + 18, "COLD-A"),
                 _DemoItem("鮮奶", "12", "68", normal + 6, "COLD-A"),
+                _DemoItem("冷凍蝦仁", "6", "250", normal + 60, "FRZ-1"),
+                _DemoItem("冷凍水餃", "5", "150", last_soon_day, "FRZ-1"),
+                _DemoItem("冷凍水餃", "4", "150", normal + 90, "FRZ-1"),
+                _DemoItem("醬油", "2", "85", last_soon_day, "DRY-1"),
             ),
         ),
     )
@@ -236,8 +252,10 @@ def _insert_demo_data(session: Session, now: datetime, today: date, warning_days
     operator = _demo_operator(session, created_at)
 
     locations = {
-        code: StorageLocation(code=code, name=name, storage_type=storage_type, description=note)
-        for code, name, storage_type, note in DEMO_LOCATIONS
+        code: StorageLocation(
+            code=code, name=name, storage_type=storage_type, description=note, is_active=active
+        )
+        for code, name, storage_type, note, active in DEMO_LOCATIONS
     }
     suppliers = {
         name: Supplier(name=name, contact_person=contact, phone=phone)

@@ -76,10 +76,10 @@ def _snapshot(session: Session) -> dict[str, list[tuple]]:
 def test_seeds_expected_master_data_and_confirmed_receipts(session: Session) -> None:
     assert main(["seed-demo"]) == 0
 
-    assert _count(session, StorageLocation) == 2
+    assert _count(session, StorageLocation) == 5
     assert _count(session, Supplier) == 3
-    assert _count(session, IngredientCategory) == 4
-    assert _count(session, Ingredient) == 10
+    assert _count(session, IngredientCategory) == 5
+    assert _count(session, Ingredient) == 13
     assert session.scalars(select(Ingredient.safety_stock_quantity)).all().count(Decimal("0")) == 0
     receipts = session.scalars(select(GoodsReceipt)).all()
     assert len(receipts) == 2
@@ -182,16 +182,16 @@ def test_scenarios_match_the_readme_table_at_default_warning_days(session: Sessi
     )
     for name, expiry in rows:
         statuses[classify_expiry(expiry, FIXED_TODAY, 3)].add(name)
-    assert statuses[ExpiryStatus.EXPIRED] == {"鮮奶"}
+    assert statuses[ExpiryStatus.EXPIRED] == {"鮮奶", "冷凍蝦仁"}
     assert statuses[ExpiryStatus.EXPIRES_TODAY] == {"鮮奶油"}
-    assert statuses[ExpiryStatus.EXPIRING_SOON] == {"雞胸肉", "鮭魚片"}
+    assert statuses[ExpiryStatus.EXPIRING_SOON] == {"雞胸肉", "鮭魚片", "冷凍水餃", "醬油"}
     assert {"雞胸肉", "豬里肌", "高麗菜", "白米", "醬油"} <= statuses[ExpiryStatus.NORMAL]
     low = {
         row.ingredient_name
         for row in session.execute(stock_level_stmt(FIXED_TODAY))
         if is_low_stock(row.store_available_quantity, row.safety_stock_quantity)
     }
-    assert low == {"雞蛋", "沙拉油"}
+    assert low == {"雞蛋", "沙拉油", "起司片"}
 
 
 def test_chicken_matches_the_srs_section_9_starting_point(session: Session) -> None:
@@ -277,7 +277,7 @@ def test_employees_alone_do_not_block_seeding(session: Session) -> None:
 
     assert main(["seed-demo"]) == 0
 
-    assert _count(session, Ingredient) == 10
+    assert _count(session, Ingredient) == 13
 
 
 def test_reset_replaces_all_business_data_including_full_history(session: Session) -> None:
@@ -306,7 +306,7 @@ def test_reset_replaces_all_business_data_including_full_history(session: Sessio
     assert _count(session, BatchLocationChange) == 0
     assert session.get(InventoryBatch, seeded.batch_id) is None
     assert session.get(Ingredient, seeded.ingredient_id) is None
-    assert _count(session, Ingredient) == 10
+    assert _count(session, Ingredient) == 13
     assert find_stock_discrepancies(session) == []
 
 
@@ -335,7 +335,7 @@ def test_reset_keeps_accounts_and_alert_setting(session: Session) -> None:
 def test_reset_on_empty_database_just_seeds(session: Session) -> None:
     assert main(["seed-demo", "--reset"]) == 0
 
-    assert _count(session, Ingredient) == 10
+    assert _count(session, Ingredient) == 13
 
 
 def test_demo_operator_is_a_single_account_that_cannot_log_in(session: Session) -> None:
@@ -409,3 +409,31 @@ def test_several_ingredients_have_two_issuable_batches_for_non_fefo_demos(sessio
     )
     multi = {name for name, count in rows if count >= 2}
     assert {"雞胸肉", "豬里肌", "高麗菜", "白米", "雞蛋"} <= multi
+
+
+def test_storage_locations_cover_every_type_and_page_state(session: Session) -> None:
+    """儲存位置頁要能看到：三種保存方式、停用位置、沒有庫存的啟用位置，且每類都有需要注意的批次。"""
+    assert main(["seed-demo"]) == 0
+
+    locations = session.scalars(select(StorageLocation)).all()
+    assert {location.storage_type for location in locations} == set(StorageType)
+    stocked = set(
+        session.scalars(
+            select(InventoryBatch.current_location_id).where(InventoryBatch.remaining_quantity > 0)
+        )
+    )
+    inactive = [location for location in locations if not location.is_active]
+    assert inactive and all(location.id not in stocked for location in inactive)
+    assert any(location.is_active and location.id not in stocked for location in locations)
+
+    rows = session.execute(
+        select(StorageLocation.storage_type, InventoryBatch.expiry_date).join(
+            InventoryBatch, InventoryBatch.current_location_id == StorageLocation.id
+        )
+    )
+    urgent_types = {
+        storage_type
+        for storage_type, expiry in rows
+        if classify_expiry(expiry, FIXED_TODAY, 3) != ExpiryStatus.NORMAL
+    }
+    assert urgent_types == set(StorageType)

@@ -62,27 +62,30 @@ function ExpandToggle({ location, expanded, onToggle }: {
 const stagger = (index: number, base = 0) =>
   ({ "--delay": `${base + Math.min(index, 10) * 70}ms` }) as CSSProperties;
 
-/** 補充說明只放「N 批次」再加最緊急的一項非零數（過期 → 今日到期 → 即期），1024 寬度才不會換行。 */
+/** 補充說明只放「N 批」再加最緊急的一項非零數（過期 → 今日到期 → 即期），1024 寬度才不會換行。 */
 function typeNote(summary: StorageTypeSummary) {
   const urgent = [
     [summary.expired_count, "過期"], [summary.expires_today_count, "今日到期"], [summary.expiring_soon_count, "即期"],
   ].find(([count]) => Number(count) > 0);
-  return urgent ? `${summary.batch_count} 批次 · ${urgent[0]} ${urgent[1]}` : `${summary.batch_count} 批次`;
+  return urgent ? `${summary.batch_count} 批 · ${urgent[0]} ${urgent[1]}` : `${summary.batch_count} 批`;
 }
 
 function SummaryCard({ icon, label, value, note, index }: {
   icon: ReactNode; label: string; value: ReactNode; note: string; index: number;
 }) {
-  // 1024 寬度每張卡約 177px，內距與間距收緊，「6 批次 · 1 今日到期」才不會換行或溢出。
-  return <Paper radius="xl" shadow="xs" px={10} py={14} className={`${classes.enter} ff-raised`}
+  // 卡片高度貼齊 40px 圖示：右側兩行，第一行「數字＋名稱」、第二行補充說明，合計約 40px。
+  // 1024 寬度每張卡約 177px，「6 批 · 1 今日到期」才不會換行或溢出。
+  return <Paper radius="lg" shadow="xs" px={8} py={10} className={`${classes.enter} ff-raised`} data-summary-card
     style={{ ...stagger(index, 80), border: "1px solid var(--ff-surface)" }}>
-    <Group gap={8} wrap="nowrap" align="flex-start">
+    <Group gap={8} wrap="nowrap" align="center">
       {icon}
       <Box style={{ minWidth: 0, whiteSpace: "nowrap" }}>
-        <Text fz="xs" c="dimmed">{label}</Text>
-        <Text fz={26} fw={800} lh={1.15} data-summary-value>{value}</Text>
+        <Group gap={6} wrap="nowrap" align="baseline">
+          <Text fz={22} fw={800} lh={1.1} data-summary-value>{value}</Text>
+          <Text fz="sm" fw={600} truncate>{label}</Text>
+        </Group>
         {/* 數字更大時以刪節號收尾，不換行也不溢出卡片。 */}
-        <Text fz="xs" c="dimmed" truncate title={note}>{note}</Text>
+        <Text fz="xs" c="dimmed" lh={1.3} truncate title={note}>{note}</Text>
       </Box>
     </Group>
   </Paper>;
@@ -153,8 +156,9 @@ function LocationBatches({ location, isAdmin, layout, onMove, onSettled }: {
     </Group>
     {overflow && <Box p="sm">{overflow}</Box>}
     <DataTable flush label={label} head={<>
-      <Table.Th>食材</Table.Th><Table.Th w={130}>批號</Table.Th><Table.Th w={110} ta="right">剩餘量</Table.Th>
-      <Table.Th w={110} ta="center">到期日</Table.Th><Table.Th w={130}>狀態</Table.Th>
+      {/* 五欄平均分配寬度，避免「食材」吃掉剩餘空間、右側四欄擠在一起。 */}
+      <Table.Th w="20%">食材</Table.Th><Table.Th w="20%">批號</Table.Th><Table.Th w="20%" ta="right">剩餘量</Table.Th>
+      <Table.Th w="20%" ta="center">到期日</Table.Th><Table.Th w="20%">狀態</Table.Th>
       {isAdmin && <Table.Th w={1}><VisuallyHidden>操作</VisuallyHidden></Table.Th>}
     </>}>
       {items.map((batch, index) => <Table.Tr key={batch.id} className={classes.enter} style={stagger(index, 40)}>
