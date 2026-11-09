@@ -49,6 +49,16 @@ describe("StatusBadge", () => {
     renderUi(<StatusBadge status="EXPIRED" detail="1 天" />);
     expect(screen.getByText("過期 1 天")).toBeTruthy();
   });
+
+  it.each([
+    ["EXPIRED", -1, "過期 1 天", "strong"],
+    ["EXPIRES_TODAY", 0, "今日到期", "strong"],
+    ["EXPIRING_SOON", 2, "即期 · 剩 2 天", "medium"],
+    ["NORMAL", 5, "剩 5 天", "weak"],
+  ] as const)("formats %s with %i days from the backend", (status, days, text, tone) => {
+    renderUi(<StatusBadge status={status} days={days} />);
+    expect(screen.getByText(text).getAttribute("data-tone")).toBe(tone);
+  });
 });
 
 describe("ActiveBadge", () => {
@@ -82,6 +92,14 @@ describe("PageHeader icon", () => {
   });
 });
 
+describe("PageHeader breadcrumb", () => {
+  it("shows the trail above the title joined by slashes", () => {
+    renderUi(<PageHeader breadcrumb={["基本資料", "儲存位置"]} title="儲存位置" />);
+    expect(screen.getByRole("navigation", { name: "麵包屑" }).textContent).toBe("基本資料 / 儲存位置");
+    expect(screen.getByRole("heading", { level: 1, name: "儲存位置" })).toBeTruthy();
+  });
+});
+
 describe("EmptyState", () => {
   it("shows title, description and action", () => {
     renderUi(<EmptyState title="功能開發中" description="對應需求：FR-04" framed
@@ -106,6 +124,14 @@ describe("DataTable", () => {
     expect(table.querySelectorAll("th")).toHaveLength(2);
     expect(screen.getByText("雞胸肉")).toBeTruthy();
   });
+
+  it("drops the outer frame in flush mode", () => {
+    const { container } = renderUi(<DataTable flush label="位置" head={<Table.Th>代碼</Table.Th>}>
+      <Table.Tr><Table.Td>R-01</Table.Td></Table.Tr>
+    </DataTable>);
+    expect(screen.getByRole("table", { name: "位置" })).toBeTruthy();
+    expect(container.querySelector(".mantine-Paper-root")).toBeNull();
+  });
 });
 
 describe("Toolbar", () => {
@@ -116,6 +142,15 @@ describe("Toolbar", () => {
     expect(input.maxLength).toBe(100);
     fireEvent.change(input, { target: { value: "R" } });
     expect(onChange).toHaveBeenCalled();
+  });
+
+  it("puts unlabelled controls in one row in row mode", () => {
+    const { container } = renderUi(<Toolbar row>
+      <SearchInput aria-label="搜尋代碼或名稱" placeholder="搜尋代碼或名稱" value="" onChange={() => {}} />
+    </Toolbar>);
+    expect(screen.getByLabelText("搜尋代碼或名稱")).toBeTruthy();
+    expect(container.querySelector(".ff-toolbar-row")).toBeTruthy();
+    expect(container.querySelector("label")).toBeNull();
   });
 });
 

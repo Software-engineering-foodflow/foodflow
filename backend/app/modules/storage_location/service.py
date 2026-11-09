@@ -1,11 +1,14 @@
 """儲存位置與整批換位置的規則（FR-05、A3）與交易邊界。權限由路由層 require_admin 把關。"""
 
+from dataclasses import dataclass, field
+from datetime import date
 from uuid import uuid4
 
 from app.core.clock import Clock
-from app.core.enums import GoodsReceiptStatus, StorageType
+from app.core.enums import ExpiryStatus, GoodsReceiptStatus, StorageType
 from app.core.uow import UnitOfWork
 from app.db.models import InventoryBatch, StorageLocation
+from app.domain.expiry import classify_expiry, days_until_expiry
 from app.modules.inventory.ledger import StockLedger, StockOp
 from app.modules.storage_location.errors import (
     batch_not_found,
@@ -20,10 +23,57 @@ from app.modules.storage_location.errors import (
 from app.modules.storage_location.repository import StorageLocationRepository
 
 
+@dataclass(frozen=True)
+class LocationOverview:
+    """清單列：位置本身加上批次數與最近到期狀態；沒有剩餘批次時 nearest 欄位皆為 None。"""
+
+    location: StorageLocation
+    batch_count: int
+    nearest_expiry_date: date | None
+    nearest_expiry_status: ExpiryStatus | None
+    nearest_days_until_expiry: int | None
+
+
+@dataclass
+class StorageTypeSummary:
+    """單一類型的啟用位置數，與其上剩餘批次的數量與效期分布。"""
+
+    storage_type: StorageType
+    location_count: int = 0
+    batch_count: int = 0
+    expired_count: int = 0
+    expires_today_count: int = 0
+    expiring_soon_count: int = 0
+
+
+@dataclass
+class LocationSummary:
+    active_count: int
+    total_count: int
+    by_type: list[StorageTypeSummary] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class BatchView:
+    batch: InventoryBatch
+    expiry_status: ExpiryStatus
+    days_until_expiry: int
+
+
+_STATUS_COUNTERS = {
+    ExpiryStatus.EXPIRED: "expired_count",
+    ExpiryStatus.EXPIRES_TODAY: "expires_today_count",
+    ExpiryStatus.EXPIRING_SOON: "expiring_soon_count",
+}
+
+
 class StorageLocationService:
-    def __init__(self, repository: StorageLocationRepository, uow: UnitOfWork) -> None:
+    def __init__(
+        self, repository: StorageLocationRepository, uow: UnitOfWork, clock: Clock
+    ) -> None:
         self._repository = repository
         self._uow = uow
+        self._clock = clock
 
     def list_locations(
         self,
@@ -32,10 +82,52 @@ class StorageLocationService:
         is_active: bool | None,
         page: int,
         page_size: int,
-    ) -> tuple[list[StorageLocation], int]:
-        return self._repository.list_locations(
+    ) -> tuple[list[LocationOverview], int]:
+        locations, total = self._repository.list_locations(
             search.strip(), storage_type, is_active, page, page_size
         )
+        stats = self._repository.batch_stats([location.id for location in locations])
+        today = self._clock.today()
+        warning_days = self._repository.warning_days() if stats else 0
+        items = []
+        for location in locations:
+            stat = stats.get(location.id)
+            if stat is None:
+                items.append(LocationOverview(location, 0, None, None, None))
+                continue
+            nearest = stat.nearest_expiry_date
+            items.append(
+                LocationOverview(
+                    location,
+                    stat.batch_count,
+                    nearest,
+                    classify_expiry(nearest, today, warning_days),
+                    days_until_expiry(nearest, today),
+                )
+            )
+        return items, total
+
+    def summary(self) -> LocationSummary:
+        """只算啟用位置；停用位置只計入總數。"""
+        by_type = {storage_type: StorageTypeSummary(storage_type) for storage_type in StorageType}
+        result = LocationSummary(active_count=0, total_count=0, by_type=list(by_type.values()))
+        for row in self._repository.location_counts():
+            result.total_count += row.count
+            if row.is_active:
+                result.active_count += row.count
+                by_type[row.storage_type].location_count += row.count
+        buckets = self._repository.active_batch_expiry_buckets()
+        if not buckets:
+            return result
+        today = self._clock.today()
+        warning_days = self._repository.warning_days()
+        for bucket in buckets:
+            summary = by_type[bucket.storage_type]
+            summary.batch_count += bucket.count
+            counter = _STATUS_COUNTERS.get(classify_expiry(bucket.expiry_date, today, warning_days))
+            if counter is not None:
+                setattr(summary, counter, getattr(summary, counter) + bucket.count)
+        return result
 
     def create(
         self, *, code: str, name: str, storage_type: StorageType, description: str | None
@@ -113,10 +205,23 @@ class BatchRelocationService:
 
     def list_batches(
         self, location_id: int, page: int, page_size: int
-    ) -> tuple[list[InventoryBatch], int]:
+    ) -> tuple[list[BatchView], int]:
         if self._repository.get(location_id) is None:
             raise location_not_found()
-        return self._repository.list_location_batches(location_id, page, page_size)
+        batches, total = self._repository.list_location_batches(location_id, page, page_size)
+        if not batches:
+            return [], total
+        today = self._clock.today()
+        warning_days = self._repository.warning_days()
+        views = [
+            BatchView(
+                batch,
+                classify_expiry(batch.expiry_date, today, warning_days),
+                days_until_expiry(batch.expiry_date, today),
+            )
+            for batch in batches
+        ]
+        return views, total
 
     def move(
         self, batch_id: int, *, to_location_id: int, reason: str, operator_id: int

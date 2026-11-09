@@ -87,3 +87,25 @@ body {
   color: var(--mantine-color-white);
   box-shadow: var(--ff-shadow-glow);
 }
+
+/* 工具列單列模式：搜尋框佔滿剩餘寬度，篩選固定寬度，元件之間 12px。 */
+.ff-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+}
+.ff-toolbar-row > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.ff-toolbar-row > :not(:first-child) {
+  flex: none;
+  width: 150px;
+}
+
+/* 外觀較小的圖示按鈕：用透明外擴區把可點範圍補到 44px（30px + 7px × 2）。 */
+.ff-hit-44::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}

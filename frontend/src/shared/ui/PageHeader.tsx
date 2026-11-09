@@ -8,20 +8,25 @@ interface PageHeaderProps {
   actions?: ReactNode;
   /** 標題左側 42px 漸層圖示方塊裡的圖示，建議用 icons.tsx 的 20px 圖示。 */
   icon?: ReactNode;
+  /** 標題上方的麵包屑，例如 `["基本資料", "儲存位置"]`，以「 / 」分隔。 */
+  breadcrumb?: string[];
 }
 
 /**
  * 各頁共用的標題列；每頁只放一個，作為該頁的 h1（DESIGN.md › 頁面標題列）。
  *
  * ```tsx
- * <PageHeader icon={<MapPinIcon size={20} />} title="儲存位置" description="一句話說明"
+ * <PageHeader breadcrumb={["基本資料", "儲存位置"]} icon={<MapPinIcon size={20} />} title="儲存位置"
+ *   description="一句話說明"
  *   actions={<Button leftSection={<PlusIcon size={18} />}>新增位置</Button>} />
  * ```
  */
-export function PageHeader({ title, description, actions, icon }: PageHeaderProps) {
+export function PageHeader({ title, description, actions, icon, breadcrumb }: PageHeaderProps) {
   return (
     <Group justify="space-between" align="flex-end" gap="md">
       <div style={{ minWidth: 0 }}>
+        {breadcrumb && breadcrumb.length > 0 && <Text component="nav" aria-label="麵包屑" fz="xs" mb={4}
+          style={{ color: "var(--ff-text-subtle)" }}>{breadcrumb.join(" / ")}</Text>}
         <Group gap={12} wrap="nowrap">
           {icon && <Box className="ff-icon-tile" w={42} h={42} style={{ borderRadius: "var(--mantine-radius-lg)" }}
             aria-hidden="true">{icon}</Box>}

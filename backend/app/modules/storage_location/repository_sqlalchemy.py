@@ -1,5 +1,7 @@
 """SQLAlchemy 儲存位置存取；不 commit、不判斷規則。"""
 
+from collections.abc import Sequence
+
 from sqlalchemy import exists, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -7,6 +9,7 @@ from app.core.db import for_update
 from app.core.enums import GoodsReceiptStatus, StorageType
 from app.core.errors import flush_or_raise
 from app.db.models import (
+    AlertSetting,
     BatchLocationChange,
     GoodsReceipt,
     GoodsReceiptItem,
@@ -14,7 +17,12 @@ from app.db.models import (
     StorageLocation,
 )
 from app.modules.storage_location.errors import duplicate_code, referenced_on_delete
-from app.modules.storage_location.repository import StorageLocationRepository
+from app.modules.storage_location.repository import (
+    ExpiryBucket,
+    LocationBatchStats,
+    LocationCount,
+    StorageLocationRepository,
+)
 
 # 檢查後仍被併發寫入引用時，由 FK 擋下刪除（最後防線）。
 _REFERENCING_FOREIGN_KEYS = (
@@ -90,6 +98,47 @@ class SqlAlchemyStorageLocationRepository(StorageLocationRepository):
             )
             or 0
         )
+
+    def batch_stats(self, location_ids: Sequence[int]) -> dict[int, LocationBatchStats]:
+        if not location_ids:
+            return {}
+        rows = self._session.execute(
+            select(
+                InventoryBatch.current_location_id,
+                func.count(),
+                func.min(InventoryBatch.expiry_date),
+            )
+            .where(
+                InventoryBatch.current_location_id.in_(set(location_ids)),
+                InventoryBatch.remaining_quantity > 0,
+            )
+            .group_by(InventoryBatch.current_location_id)
+        )
+        return {
+            location_id: LocationBatchStats(batch_count=count, nearest_expiry_date=nearest)
+            for location_id, count, nearest in rows
+        }
+
+    def location_counts(self) -> list[LocationCount]:
+        rows = self._session.execute(
+            select(StorageLocation.storage_type, StorageLocation.is_active, func.count()).group_by(
+                StorageLocation.storage_type, StorageLocation.is_active
+            )
+        )
+        return [LocationCount(kind, active, count) for kind, active, count in rows]
+
+    def active_batch_expiry_buckets(self) -> list[ExpiryBucket]:
+        rows = self._session.execute(
+            select(StorageLocation.storage_type, InventoryBatch.expiry_date, func.count())
+            .join(StorageLocation, StorageLocation.id == InventoryBatch.current_location_id)
+            .where(StorageLocation.is_active.is_(True), InventoryBatch.remaining_quantity > 0)
+            .group_by(StorageLocation.storage_type, InventoryBatch.expiry_date)
+        )
+        return [ExpiryBucket(storage_type, expiry, count) for storage_type, expiry, count in rows]
+
+    def warning_days(self) -> int:
+        stmt = select(AlertSetting.warning_days).order_by(AlertSetting.id).limit(1)
+        return self._session.scalars(stmt).one()
 
     def is_referenced(self, location_id: int) -> bool:
         references = (

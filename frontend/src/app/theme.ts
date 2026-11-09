@@ -29,9 +29,9 @@ export const tokens = {
   surfaceSubtle: "#fbfcf9",
   surfaceHeader: "#f6f9f3",
   surfaceSelected: "#f1f7ed",
-  canvasTop: "#fafcf7",
-  canvasMid: "#f2f7ef",
-  canvasBottom: "#e8f1e7",
+  canvasTop: "#f4f8f3",
+  canvasMid: "#f9fbf7",
+  canvasBottom: "#ffffff",
   line: "#e3eadf",
   lineSoft: "#eff3ec",
   lineSelected: "#dfeada",
@@ -40,9 +40,9 @@ export const tokens = {
   borderInput: "#849788",
   codeBg: "#edf3e8",
   codeFg: "#3e5a45",
-  sidebarTop: "#f2f7ed",
-  sidebarMid: "#e3eedd",
-  sidebarBottom: "#d5e5d0",
+  sidebarTop: "#eaf2e8",
+  sidebarMid: "#f1f7ee",
+  sidebarBottom: "#fbfdf9",
   sidebarFg: "#3b4e42",
   sidebarMuted: "#4f6a58",
   sidebarIcon: "#6f8a79",
@@ -52,6 +52,7 @@ export const tokens = {
   primary700: "#2f805a",
   primary800: "#236e4b",
   primary900: "#145f3e",
+  primary950: "#0d4a2f",
   focusRing: "#2f805a",
   successBg: "#e9f4ec",
   inactiveBg: "#f0f1ef",
@@ -73,6 +74,8 @@ const green = ramp("#e9f4ec", "#2a7a4f", "#1f5e3c");
 
 export const theme = createTheme({
   primaryColor: "forest",
+  // 系統設定「減少動態」時略過 Mantine 元件的轉場（下拉選單、選單、對話框）。
+  respectReducedMotion: true,
   // 實心元件用 index 8（#236E4B，白字 6.17:1），淺色變體的文字也用 index 8。
   primaryShade: { light: 8, dark: 8 },
   colors: {
@@ -132,7 +135,11 @@ export const theme = createTheme({
     }),
     TextInput: TextInput.extend({ styles: { input: { minHeight: 44 } } }),
     PasswordInput: PasswordInput.extend({ styles: { input: { minHeight: 44 } } }),
-    Select: Select.extend({ styles: { input: { minHeight: 44 } } }),
+    // 下拉選單展開時淡入並稍微放大，跟「⋯」選單一樣有動畫；系統設定減少動態時 Mantine 會略過。
+    Select: Select.extend({
+      defaultProps: { comboboxProps: { transitionProps: { transition: "pop", duration: 160 } } },
+      styles: { input: { minHeight: 44 } },
+    }),
     Modal: Modal.extend({
       defaultProps: {
         radius: "xl", shadow: "lg", padding: 24,
@@ -213,13 +220,13 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     "--ff-success-bg": tokens.successBg,
     "--ff-inactive-bg": tokens.inactiveBg,
     "--ff-focus-ring": tokens.focusRing,
-    "--ff-canvas": `radial-gradient(700px 320px at 92% -40px, rgba(183, 201, 79, 0.22), transparent 70%), `
+    "--ff-canvas": `radial-gradient(700px 320px at 92% -40px, rgba(183, 201, 79, 0.11), transparent 70%), `
       + `linear-gradient(165deg, ${tokens.canvasTop}, ${tokens.canvasMid} 55%, ${tokens.canvasBottom})`,
     "--ff-sidebar": `linear-gradient(180deg, ${tokens.sidebarTop}, ${tokens.sidebarMid} 55%, ${tokens.sidebarBottom})`,
-    "--ff-gradient-primary": `linear-gradient(135deg, ${tokens.primary800}, ${tokens.primary700})`,
-    "--ff-gradient-primary-hover": `linear-gradient(135deg, ${tokens.primary900}, ${tokens.primary800})`,
-    "--ff-gradient-nav": `linear-gradient(90deg, ${tokens.primary800}, ${tokens.primary700})`,
-    "--ff-gradient-tile": `linear-gradient(135deg, ${tokens.primary800}, ${tokens.accentDeep})`,
+    "--ff-gradient-primary": `linear-gradient(135deg, ${tokens.primary900}, ${tokens.primary700})`,
+    "--ff-gradient-primary-hover": `linear-gradient(135deg, ${tokens.primary950}, ${tokens.primary800})`,
+    "--ff-gradient-nav": `linear-gradient(90deg, ${tokens.primary900}, ${tokens.primary700})`,
+    "--ff-gradient-tile": `linear-gradient(135deg, ${tokens.primary900}, ${tokens.accentDeep})`,
     "--ff-gradient-toolbar": `linear-gradient(180deg, ${tokens.surface}, ${tokens.surfaceSubtle})`,
     "--ff-shadow-glow": "0 6px 14px -8px rgba(35, 110, 75, 0.7)",
     "--ff-focus-glow": "0 0 0 2px rgba(47, 128, 90, 0.25)",

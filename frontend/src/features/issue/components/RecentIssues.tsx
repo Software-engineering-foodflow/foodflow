@@ -85,7 +85,7 @@ export function RecentIssues() {
           <Table.Th>食材</Table.Th>
           <Table.Th>批次與數量</Table.Th>
           <Table.Th>操作者</Table.Th>
-          <Table.Th ta="right">操作</Table.Th>
+          <Table.Th ta="center" w={1} style={{ whiteSpace: "nowrap" }}>操作</Table.Th>
         </>}>
           {records.data.items.map((record, index) => {
             const reversed = record.reversal;
@@ -107,7 +107,8 @@ export function RecentIssues() {
                 </Text>}
               </Stack></Table.Td>
               <Table.Td><Text size="sm">{record.operator_name}</Text></Table.Td>
-              <Table.Td ta="right">
+              {/* 欄寬貼齊按鈕，標題與「沖銷」「已沖銷」都置中，上下才對得齊。 */}
+              <Table.Td ta="center">
                 {reversed
                   ? <Badge color="gray" variant="outline" className={motion.reveal}>已沖銷</Badge>
                   : <Button variant="default" size="sm" h={44} className={motion.press}

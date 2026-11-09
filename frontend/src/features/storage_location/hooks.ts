@@ -4,8 +4,8 @@ import { invalidateStockQueries, queryKeys } from "../../shared/api/queryKeys";
 import * as api from "./api";
 
 export type {
-  LocationBatch, StorageLocation, StorageLocationCreate, StorageLocationFilters,
-  StorageLocationUpdate,
+  LocationBatch, StorageLocation, StorageLocationCreate, StorageLocationFilters, StorageLocationRow,
+  StorageLocationSummary, StorageLocationUpdate, StorageTypeSummary,
 } from "./api";
 export { PAGE_SIZE } from "./api";
 
@@ -20,6 +20,10 @@ async function invalidateLocations(client: QueryClient) {
 export function useStorageLocations(filters: api.StorageLocationFilters) {
   return useQuery({ queryKey: queryKeys.storageLocations.list(filters),
     queryFn: ({ signal }) => api.listStorageLocations(filters, signal) });
+}
+export function useStorageLocationSummary() {
+  return useQuery({ queryKey: queryKeys.storageLocations.summary,
+    queryFn: ({ signal }) => api.getStorageLocationSummary(signal) });
 }
 export function useCreateStorageLocation() {
   const client = useQueryClient();

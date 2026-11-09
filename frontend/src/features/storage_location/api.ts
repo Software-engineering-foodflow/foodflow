@@ -2,10 +2,16 @@ import { API_PREFIX, request } from "../../shared/api/client";
 import type { components } from "../../shared/api/schema";
 
 export type StorageLocation = components["schemas"]["StorageLocationResponse"];
+/** 清單列：位置本身加上批次數與最近到期狀態（後端判定）。 */
+export type StorageLocationRow = components["schemas"]["StorageLocationListItem"];
+export type StorageLocationSummary = components["schemas"]["StorageLocationSummaryResponse"];
+export type StorageTypeSummary = components["schemas"]["StorageTypeSummaryResponse"];
 export type StorageLocationCreate = components["schemas"]["StorageLocationCreate"];
 export type StorageLocationUpdate = components["schemas"]["StorageLocationUpdate"];
 export type StorageLocationList = components["schemas"]["StorageLocationList"];
-export type LocationBatch = components["schemas"]["LocationBatchResponse"];
+export type LocationBatch = components["schemas"]["LocationBatchItem"];
+/** 換位置的回應不含效期狀態與天數。 */
+export type MovedBatch = components["schemas"]["LocationBatchResponse"];
 export type LocationBatchList = components["schemas"]["LocationBatchList"];
 export type BatchMoveRequest = components["schemas"]["BatchMoveRequest"];
 export interface StorageLocationFilters {
@@ -25,6 +31,10 @@ export function listStorageLocations(filters: StorageLocationFilters, signal?: A
   if (filters.status) params.set("is_active", filters.status);
   return request<StorageLocationList>(`${BASE}?${params}`, { signal });
 }
+/** 摘要卡：只算啟用位置，各類型的批次數與過期／今日到期／即期數。 */
+export function getStorageLocationSummary(signal?: AbortSignal) {
+  return request<StorageLocationSummary>(`${BASE}/summary`, { signal });
+}
 export function createStorageLocation(body: StorageLocationCreate) {
   return request<StorageLocation>(BASE, { method: "POST", body });
 }
@@ -43,7 +53,7 @@ export function listLocationBatches(locationId: number, signal?: AbortSignal) {
   return request<LocationBatchList>(`${BASE}/${locationId}/batches?page_size=100`, { signal });
 }
 export function moveBatch(batchId: number, body: BatchMoveRequest) {
-  return request<LocationBatch>(`${API_PREFIX}/inventory-batches/${batchId}/location`, {
+  return request<MovedBatch>(`${API_PREFIX}/inventory-batches/${batchId}/location`, {
     method: "POST", body,
   });
 }
