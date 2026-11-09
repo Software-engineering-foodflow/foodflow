@@ -81,7 +81,7 @@ function SummaryCard({ icon, label, value, note, index }: {
       {icon}
       <Box style={{ minWidth: 0, whiteSpace: "nowrap" }}>
         <Group gap={6} wrap="nowrap" align="baseline">
-          <Text fz={22} fw={800} lh={1.1} data-summary-value>{value}</Text>
+          <Text fz={18} fw={800} lh={1.2} data-summary-value>{value}</Text>
           <Text fz="sm" fw={600} truncate>{label}</Text>
         </Group>
         {/* 數字更大時以刪節號收尾，不換行也不溢出卡片。 */}
@@ -309,8 +309,9 @@ export function StorageLocationsPage() {
   const columnCount = 7;
   const list = () => {
     if (layout === "table") return <DataTable flush head={<>
-      <Table.Th w={96}>代碼</Table.Th><Table.Th>名稱</Table.Th><Table.Th w={96}>類型</Table.Th>
-      <Table.Th w={72}>批次</Table.Th><Table.Th w={132}>最近到期</Table.Th><Table.Th w={92}>狀態</Table.Th>
+      {/* 名稱只拿剩下的寬度（約四分之一），右側四欄往左分散，不會擠在一起。 */}
+      <Table.Th w="10%">代碼</Table.Th><Table.Th>名稱</Table.Th><Table.Th w="14%">類型</Table.Th>
+      <Table.Th w="11%">批次</Table.Th><Table.Th w="18%">最近到期</Table.Th><Table.Th w="12%">狀態</Table.Th>
       <Table.Th w={isAdmin ? 124 : 76}><VisuallyHidden>操作與批次</VisuallyHidden></Table.Th>
     </>}>
       {items.map((location, index) => {

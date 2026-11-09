@@ -74,6 +74,8 @@ const green = ramp("#e9f4ec", "#2a7a4f", "#1f5e3c");
 
 export const theme = createTheme({
   primaryColor: "forest",
+  // 系統設定「減少動態」時略過 Mantine 元件的轉場（下拉選單、選單、對話框）。
+  respectReducedMotion: true,
   // 實心元件用 index 8（#236E4B，白字 6.17:1），淺色變體的文字也用 index 8。
   primaryShade: { light: 8, dark: 8 },
   colors: {
@@ -133,7 +135,11 @@ export const theme = createTheme({
     }),
     TextInput: TextInput.extend({ styles: { input: { minHeight: 44 } } }),
     PasswordInput: PasswordInput.extend({ styles: { input: { minHeight: 44 } } }),
-    Select: Select.extend({ styles: { input: { minHeight: 44 } } }),
+    // 下拉選單展開時淡入並稍微放大，跟「⋯」選單一樣有動畫；系統設定減少動態時 Mantine 會略過。
+    Select: Select.extend({
+      defaultProps: { comboboxProps: { transitionProps: { transition: "pop", duration: 160 } } },
+      styles: { input: { minHeight: 44 } },
+    }),
     Modal: Modal.extend({
       defaultProps: {
         radius: "xl", shadow: "lg", padding: 24,
