@@ -16,7 +16,7 @@
 - 採用程度：大幅修改
 - 截圖／檔案：[第 1 輪](turn-01.png)、[第 2 輪](turn-02.png)；[全系統泳道圖](../../diagrams/b-swimlane-system-overview.png)；[說明](../../b-swimlane-diagrams.md)
 - 對應文件章節：B 文件：三、泳道圖
-- 狀態：待確認
+- 狀態：已確認
 
 ## 2
 
@@ -31,7 +31,7 @@
 - 採用程度：僅參考
 - 截圖／檔案：[第 3 輪](turn-03.png)；[Markdown](../../b-analysis-sections-3-5.md)；[Word](../../b-analysis-sections-3-5.docx)
 - 對應文件章節：B 文件：三、泳道圖；四、ER 圖與資料表；五、類別圖
-- 狀態：待確認
+- 狀態：已確認
 
 ## 3
 
@@ -46,5 +46,5 @@
 - 採用程度：僅參考
 - 截圖／檔案：[第 4 輪](turn-04.png)；[完整文字稿](transcript.md)
 - 對應文件章節：專案版本管理
-- 狀態：待確認
+- 狀態：已確認
 

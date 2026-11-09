@@ -16,7 +16,7 @@
 - 採用程度：不採用
 - 截圖／檔案：docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-03.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/transcript.md
 - 對應文件章節：B（圖表排版方案比較）
-- 狀態：待確認
+- 狀態：已確認
 
 ## 2
 
@@ -31,7 +31,7 @@
 - 採用程度：直接採用
 - 截圖／檔案：docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-06.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-09.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/transcript.md
 - 對應文件章節：B（ER 圖與領域類別圖）
-- 狀態：待確認
+- 狀態：已確認
 
 ## 3
 
@@ -46,7 +46,7 @@
 - 採用程度：不採用
 - 截圖／檔案：docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-08.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/transcript.md
 - 對應文件章節：B（圖表可讀性比較）
-- 狀態：待確認
+- 狀態：已確認
 
 ## 4
 
@@ -61,7 +61,7 @@
 - 採用程度：直接採用
 - 截圖／檔案：docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-13.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/transcript.md
 - 對應文件章節：B（正式圖表整理）
-- 狀態：待確認
+- 狀態：已確認
 
 ## 5
 
@@ -76,7 +76,7 @@
 - 採用程度：僅參考
 - 截圖／檔案：docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-14.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-15.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/transcript.md
 - 對應文件章節：F（測試與發布前檢查）、G（管理紀錄）
-- 狀態：待確認
+- 狀態：已確認
 
 ## 6
 
@@ -91,4 +91,4 @@
 - 採用程度：僅參考
 - 截圖／檔案：docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/turn-18.png、docs/ai-evidence/20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/transcript.md
 - 對應文件章節：B（泳道圖）、G（AI 使用紀錄）
-- 狀態：待確認
+- 狀態：已確認
