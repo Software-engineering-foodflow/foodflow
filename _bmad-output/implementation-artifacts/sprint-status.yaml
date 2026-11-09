@@ -71,12 +71,12 @@ development_status:
   6-3-盤點調整: review # 真實 PostgreSQL 測試已通過（合併時驗證）；人工驗收待做
   epic-6-retrospective: optional
 
-  epic-7: backlog
-  7-1-效期預警清單: backlog
-  7-2-低庫存預警: backlog
-  7-3-預警篩選與前往處理: backlog
-  7-4-從過期預警一鍵報廢: backlog
-  7-5-設定預警天數: backlog
+  epic-7: in-progress
+  7-1-效期預警清單: review
+  7-2-低庫存預警: review
+  7-3-預警篩選與前往處理: review
+  7-4-從過期預警一鍵報廢: review
+  7-5-設定預警天數: review
   epic-7-retrospective: optional
 
   epic-8: in-progress

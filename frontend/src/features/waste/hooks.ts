@@ -36,17 +36,18 @@ export function useCreateWaste() {
 }
 /** 每次開框複製明確剩餘量；重新查詢不會改寫已核對的提交量。 */
 export function useFullWaste() {
-  const [snapshot, setSnapshot] = useState<api.WasteBatch | null>(null);
+  type Snapshot = Pick<api.WasteBatch, "id" | "batch_number" | "ingredient_name" | "unit" | "remaining_quantity">;
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [reason, setReason] = useState<api.WasteInput["reason"]>("EXPIRED");
   const [note, setNote] = useState("");
   const [completed, setCompleted] = useState(false);
-  const [unresolved, setUnresolved] = useState<api.WasteBatch | null>(null);
+  const [unresolved, setUnresolved] = useState<Snapshot | null>(null);
   const { key, rotate } = useIdempotencyKey();
   const mutation = useCreateWaste();
   const submitting = useRef(false);
   return {
     snapshot, reason, note, completed, unresolved: unresolved !== null, pending: mutation.isPending, error: api.errorInfo(mutation.error),
-    open: (batch: api.WasteBatch) => {
+    open: (batch: Snapshot) => {
       if (submitting.current) return;
       if (unresolved) { setSnapshot({ ...unresolved }); return; }
       setSnapshot({ ...batch }); setReason("EXPIRED"); setNote(""); setCompleted(false);

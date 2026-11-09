@@ -20,6 +20,7 @@ from app.core.errors import (
     FieldError,
     error_payload,
 )
+from app.modules.alerts.router import router as alerts_router
 from app.modules.auth.dependencies import get_current_employee
 from app.modules.auth.router import public_router as auth_public_router
 from app.modules.auth.router import router as auth_router
@@ -152,6 +153,7 @@ def create_app(
         responses=ERROR_RESPONSES,
     )
     api_router.include_router(auth_router)
+    api_router.include_router(alerts_router)
     api_router.include_router(storage_location_router)
     api_router.include_router(issue_router)
     api_router.include_router(waste_router)
