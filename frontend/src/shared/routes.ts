@@ -19,12 +19,8 @@ export const routes = {
   storageLocations: "/storage-locations",
 } as const;
 
-/** 對應後端 AlertAction；alerts API 完成後改用 schema.d.ts 產生的型別。 */
-export interface AlertActionTarget {
-  type: "ISSUE" | "WASTE" | "CREATE_GOODS_RECEIPT";
-  ingredient_id: number;
-  batch_id?: number | null;
-}
+/** 對應後端產生的預警動作型別。 */
+export type AlertActionTarget = import("./api/schema").components["schemas"]["AlertAction"];
 
 export function alertActionPath(action: AlertActionTarget): string {
   switch (action.type) {

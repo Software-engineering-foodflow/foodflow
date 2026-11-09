@@ -5,7 +5,6 @@ import { routes } from "../shared/routes";
 import { renderApp } from "../test/renderApp";
 
 const placeholders = [
-  [routes.home, "預警首頁", "謝文佳", "FR-12、FR-13、FR-14"],
   [routes.inventory, "庫存", "ChiaJungTien", "FR-08、FR-09"],
   [routes.goodsReceipts, "進貨", "ChiaJungTien", "FR-06、FR-07"],
 ] as const;
@@ -33,12 +32,12 @@ describe("router", () => {
     expect(screen.getByText(`對應需求：${fr}`)).toBeTruthy();
   });
 
-  it("keeps the backend status below the alerts placeholder", async () => {
+  it("mounts the working alerts home with server filters", async () => {
     renderApp(routes.home);
-    expect(await screen.findByText("後端正常")).toBeTruthy();
-    const heading = screen.getByRole("heading", { level: 1, name: "預警首頁" });
-    const status = screen.getByRole("heading", { name: "系統狀態" });
-    expect(heading.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 1, name: "預警首頁" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "預警狀態" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "儲存位置" })).toBeTruthy();
+    expect(screen.queryByText("功能開發中")).toBeNull();
   });
 
   it.each([

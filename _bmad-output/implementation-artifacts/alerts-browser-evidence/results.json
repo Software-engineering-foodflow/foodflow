@@ -1,0 +1,78 @@
+[
+  {
+    "width": 1024,
+    "height": 768,
+    "scrollWidth": 1024,
+    "innerWidth": 1024,
+    "visibleRows": 5,
+    "controls": [
+      {
+        "text": "預警設定",
+        "width": 90,
+        "height": 44
+      },
+      {
+        "text": "mantine-pioeks5xr",
+        "width": 222.65625,
+        "height": 44
+      },
+      {
+        "text": "mantine-zy8btglw5",
+        "width": 222.671875,
+        "height": 44
+      },
+      {
+        "text": "重新整理",
+        "width": 90,
+        "height": 44
+      },
+      {
+        "text": "全數報廢",
+        "width": 90,
+        "height": 44
+      }
+    ],
+    "filter": "passed",
+    "setting": "passed",
+    "waste": "passed",
+    "fixtureApi": true
+  },
+  {
+    "width": 1366,
+    "height": 768,
+    "scrollWidth": 1366,
+    "innerWidth": 1366,
+    "visibleRows": 5,
+    "controls": [
+      {
+        "text": "預警設定",
+        "width": 90,
+        "height": 44
+      },
+      {
+        "text": "mantine-bqizea5zc",
+        "width": 331.328125,
+        "height": 44
+      },
+      {
+        "text": "mantine-fje0rybp4",
+        "width": 331.328125,
+        "height": 44
+      },
+      {
+        "text": "重新整理",
+        "width": 90,
+        "height": 44
+      },
+      {
+        "text": "全數報廢",
+        "width": 90,
+        "height": 44
+      }
+    ],
+    "filter": "passed",
+    "setting": "passed",
+    "waste": "passed",
+    "fixtureApi": true
+  }
+]

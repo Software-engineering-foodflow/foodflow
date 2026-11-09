@@ -33,3 +33,4 @@
 | 2026-11-09 13:47 | 黃予岑 | docs/c-final | <pasted_content id="be60"> | 7 | [20261109-mintguesss-511b588d](20261109-mintguesss-511b588d/) |
 | 2026-11-09 14:12 | 黃予岑 | feat/backup | 核准並繼續 | 9 | [20261109-mintguesss-98f47363](20261109-mintguesss-98f47363/) |
 | 2026-11-08～11-09 | 謝文佳 | feat/master-data-fr03-fr04 | FR-03／04 食材分類、食材與供應商實作及驗收 | 15 | [20261108-user-01a1bb95](20261108-user-01a1bb95/) |
+| 2026-11-09 21:01 | 謝文佳 | feat/alerts-expiry-low-stock | FR-12～14 效期與低庫存預警實作及驗收 | 9 | [20261109-user-01a1c066](20261109-user-01a1c066/) |
