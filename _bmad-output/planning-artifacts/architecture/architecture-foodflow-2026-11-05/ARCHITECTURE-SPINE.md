@@ -7,7 +7,7 @@ paradigm: '分層架構＋Repository（課程設計層次 4）：API → Service
 scope: '首版系統 FR-01～FR-18、NFR-01～NFR-08；單一門市'
 status: final
 created: '2026-11-05'
-updated: '2026-11-05'
+updated: '2026-11-09'
 binds: [FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08, FR-09, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18, NFR-01, NFR-02, NFR-03, NFR-04, NFR-05, NFR-06, NFR-07, NFR-08]
 sources: [docs/srs.md, _bmad-output/planning-artifacts/prd.md, CONTRIBUTING.md, docs/team-tasks.md]
 companions: []
@@ -64,7 +64,7 @@ flowchart TD
 
 - **Binds:** 所有 Service、`StockLedger`、Strategy、Notifier、Clock
 - **Prevents:** Service 自己 `new` 實作，導致測試無法替換、換實作要改 Service。
-- **Rule:** Service 的相依一律是建構子參數，型別為介面。具體類別只在組裝點建立，以 FastAPI `Depends` 組裝。`core/dependencies.py` 是 `get_session`、`get_clock`、`get_uow` 的唯一定義，模組不可另寫一份；不可使用 `Depends(..., use_cache=False)`。每個 `modules/<m>/dependencies.py` 提供純函式 `build_<m>_service(session, ...)`，`Depends` 版本呼叫它，日後的排程 job 也呼叫它。例外：`AlertRuleFactory` 可建立 `AlertRule`，因為這是它的職責。
+- **Rule:** Service 的相依一律是建構子參數，型別為介面。具體類別只在組裝點建立，以 FastAPI `Depends` 組裝。`core/dependencies.py` 是 `get_session`、`get_clock`、`get_uow` 的唯一定義，模組不可另寫一份；不可使用 `Depends(..., use_cache=False)`。每個 `modules/<m>/dependencies.py` 為其中每個 Service 提供純函式 `build_<name>_service(session, ...)`（例如 `storage_location` 有 `build_storage_location_service` 與 `build_batch_relocation_service`），`Depends` 版本只呼叫它；CLI、整合測試與日後的排程 job 也呼叫它，不自行建立 Service。例外：`AlertRuleFactory` 可建立 `AlertRule`，因為這是它的職責。
 
 ### AD-3 — Repository 回傳實體 `[ADOPTED]`
 
@@ -106,7 +106,7 @@ flowchart TD
 
 - **Binds:** FR-02、FR-06、FR-07、FR-11、FR-15、FR-16；NFR-02
 - **Prevents:** 超領、重複入庫、鎖定順序不同造成死結；鎖後讀到舊值而靜默寫錯庫存。
-- **Rule:** 所有鎖定查詢都使用 `core/db.py` 的 `for_update(stmt)`，它固定加上 `.with_for_update().execution_options(populate_existing=True)`，不可直接寫 `with_for_update`。批次只能經由 `StockLedger.lock_*` 鎖定；多筆一律依 `id` 遞增；跨表順序固定為 `goods_receipt` → `inventory_batch`。鎖定查詢不可 `joinedload`。**處理順序固定：取得鎖 → 防重送檢查 → 其他檢查（剩餘量、效期、FEFO 基準）**，鎖不到列不算錯誤。所有判斷都以鎖後的資料為準。領用一次只處理單一食材 `[ASSUMPTION]`，鎖定該食材所有 `remaining_quantity > 0` 的批次。餘量不足時回 `409 INSUFFICIENT_STOCK`，不自動改分配其他批次。`goods_receipt` 與明細的所有寫入（含編輯草稿）都先鎖單頭。任何會讓有效管理者變少的操作，先鎖定所有有效管理者（依 `id` 遞增，`with_for_update(key_share=True)`）後再計數，結果為 0 時回 `409 STATE_CONFLICT`。
+- **Rule:** 所有鎖定查詢都使用 `core/db.py` 的 `for_update(stmt)`，它固定加上 `.with_for_update().execution_options(populate_existing=True)`，不可直接寫 `with_for_update`。批次只能經由 `StockLedger.lock_*` 鎖定；多筆一律依 `id` 遞增；跨表順序固定為 `goods_receipt` → `inventory_batch`。鎖定查詢不可 `joinedload`。**處理順序固定：取得鎖 → 防重送檢查 → 其他檢查（剩餘量、效期、FEFO 基準）**，鎖不到列不算錯誤。所有判斷都以鎖後的資料為準。領用一次只處理單一食材 `[ASSUMPTION]`，鎖定該食材所有 `remaining_quantity > 0` 的批次。餘量不足時回 `409 INSUFFICIENT_STOCK`，不自動改分配其他批次。`goods_receipt` 與明細的所有寫入（含編輯草稿）都先鎖單頭。任何會讓有效管理者變少的操作（停用、降權），以及建立第一位管理者，先以 `AuthRepository.lock_all()` 鎖定**全部員工**（依 `id` 遞增，`for_update`）後再計數，結果為 0 時回 `409 STATE_CONFLICT`。鎖全部員工而不只鎖有效管理者，是因為還沒有管理者時鎖不到任何列。**已知取捨：** 一般的 `FOR UPDATE` 會擋住其他交易寫入 `operator_id` 外鍵時的 `KEY SHARE` 檢查，管理者調整帳號的交易期間，其他人的領用、報廢會短暫等待（不會死結，因為帳號交易不碰批次）；若 NFR-07 測出影響，改用 `for_update(..., key_share=True)`（`FOR NO KEY UPDATE`）即可，帳號操作不改主鍵。`key_share=True` 目前只用於換位置時鎖目標位置，避免 A→B、B→A 對向換位置死結。
 
 ### AD-8 — 防重送 `[ADOPTED，領用為擴充]`
 
@@ -118,7 +118,7 @@ flowchart TD
 | --- | --- | --- | --- |
 | 確認入庫、進貨沖銷 | 狀態機 `DRAFT → CONFIRMED → REVERSED`；鎖單頭後檢查狀態；唯一鍵 `inventory_batch.source_item_id` 作為最後防線 | Service 每次產生新的 `uuid4()`；沖銷不沿用原值，以 `reverses_transaction_id` 連回 | 已是目標狀態時，回 200 與單據目前狀態 |
 | 領用、報廢 | 必填標頭 `Idempotency-Key`（UUID）；取得鎖後以 `find_operation(key, type)` 查詢 | `Idempotency-Key` | 已存在且 `{batch_id: quantity}` 相同時，回 200 與原結果；不同時回 `409 DUPLICATE` |
-| 盤點調整 | 請求必帶 `expected_quantity`，取得鎖後比對（數量改動後又改回同值的情況不攔，已接受） | Service 產生新的 `uuid4()` | 不符時回 `409 STALE_QUANTITY`，要求重新核對 |
+| 盤點調整 | 請求必帶預覽時的 `expected_quantity` 與 `expected_transaction_id`（該批次最後一筆異動的 `id`，無異動為 `null`），取得鎖後兩者都比對，因此數量改動後又改回同值的情況也會攔下 | Service 產生新的 `uuid4()` | 任一項不符時回 `409 STALE_QUANTITY`，`details` 帶 `current_quantity` 與 `current_transaction_id`，要求重新預覽核對 |
 
 重放與首次回應走同一個方法，從已持久化的異動重建，數量取 `quantity_after`，不取批次目前值；寫入端點首次與重放都回 200。領用與盤點請求中同一批次重複時回 422。確認入庫時在鎖內重新驗證必填欄位、日期規則，以及食材、供應商、位置的啟用狀態（草稿階段到期日、數量、位置可為空，A4）。沖銷條件固定為：該單所有批次都不存在 `type <> 'RECEIPT'` 的異動（在鎖內查詢）；位置變更不阻擋沖銷。來源單據為 `REVERSED` 的批次不可盤點或換位置，回 `422 RULE_VIOLATION`；批次查詢回傳 `source_status`。
 
@@ -205,7 +205,7 @@ class Alert:
 | 403 | `FORBIDDEN` | |
 | 404 | `NOT_FOUND` | |
 | 409 | `INSUFFICIENT_STOCK` | `{batch_id, remaining_quantity, available_quantity}`（未知者為 `null`） |
-| 409 | `STALE_QUANTITY` | `{current_quantity}` |
+| 409 | `STALE_QUANTITY` | `{batch_id, current_quantity, current_transaction_id}` |
 | 409 | `STATE_CONFLICT`、`DUPLICATE`、`REFERENCED` | |
 | 422 | `VALIDATION_ERROR`、`RULE_VIOLATION` | |
 | 500 | `INTERNAL_ERROR` | |
@@ -222,7 +222,7 @@ class Alert:
 
 - **Binds:** FR-13、FR-14；所有會影響庫存顯示的 mutation
 - **Prevents:** 領用後首頁預警仍是舊資料；改預警天數或安全庫存量後畫面不更新。
-- **Rule:** query key 以 feature 名稱開頭，全部集中在 `shared/api/queryKeys.ts`。以下 mutation 成功後一律呼叫 `invalidateStockQueries()`（失效 `inventory`、`alerts`、`issue`、`goods-receipt`、`waste`、`stocktake`、`reports`）：數量異動、換位置、進貨確認與沖銷、食材與分類變更、預警設定變更。`alerts`、`inventory` 的 `staleTime` 固定為 0。未確認成功不可顯示完成（NFR-05）。
+- **Rule:** query key 以 feature 名稱開頭，全部集中在 `shared/api/queryKeys.ts`。以下 mutation 成功後一律呼叫 `invalidateStockQueries()`（失效 `storage-locations`、`inventory`、`alerts`、`issue`、`goods-receipt`、`waste`、`stocktake`、`reports`；位置清單與摘要含批次數與效期統計，所以也要失效）：數量異動、換位置、進貨確認與沖銷、食材與分類變更、預警設定變更。`alerts`、`inventory` 的 `staleTime` 固定為 0。未確認成功不可顯示完成（NFR-05）。
 
 ### AD-19 — Schema 只由 Alembic 變更
 
@@ -280,7 +280,7 @@ class StockLedger(ABC):
 | 實體命名 | 依 `CONTRIBUTING.md` 第 6 節，此節定稿如下；資料表為其單數 snake_case（`GoodsReceiptItem` → `goods_receipt_item`） |
 | 補充命名 | 領用 `Issue`、盤點 `Stocktake`、沖銷 `Reversal`、到期日 `expiry_date`、剩餘量 `remaining_quantity`、操作群組 `operation_group_id`、非 FEFO `is_non_fefo`、操作時間 `occurred_at` |
 | 類別命名 | `<Name>Service`、`<Name>Repository`（介面）、`SqlAlchemy<Name>Repository`（實作）、`<Name>Strategy`、`<Name>Rule`、`<Name>Notifier` |
-| 檔案命名 | 後端模組資料夾 snake_case；前端 feature 資料夾 kebab-case，元件 PascalCase |
+| 檔案命名 | 後端模組資料夾與前端 feature 資料夾都用 snake_case，且同名（`goods_receipt`、`storage_location`）；元件 PascalCase；query key 與 API 路徑用 kebab-case |
 | 單號 | 批號存欄位 `B-{source_item_id:08d}`（新增時已知）；進貨單號不存欄位，由實體 property 產生 `GR-{id:08d}`，查詢時解析回 `id` |
 | 主檔刪除 | 被引用的資料只能停用（`is_active = false`），刪除時回 `409 REFERENCED` |
 | 設定 | 只透過 `core/config.py`（`pydantic-settings`）讀環境變數；`.env.example` 列出全部變數 |
@@ -291,7 +291,7 @@ class StockLedger(ABC):
 
 ## Stack
 
-查詢日期 2026-11-05（PyPI、npm registry、endoflife.date），版本相容性已由獨立審查實測；Node 24 上的 `vite build`、`vitest` 與真實 PostgreSQL 17 上的列鎖尚未實跑，骨架完成後要補驗證。
+查詢日期 2026-11-05（PyPI、npm registry、endoflife.date），版本相容性已由獨立審查實測。Node 24 上的 `vite build`、`vitest`，以及真實 PostgreSQL 17 上的列鎖與併發測試，已在 CI（`.github/workflows/ci.yml`）每次執行。
 
 | Name | Version |
 | --- | --- |
@@ -354,7 +354,7 @@ flowchart LR
 | Demo | 本機或區網。FastAPI 掛載 `frontend/dist` 並提供 SPA fallback，同源、單一 port，`Secure` cookie 關閉 |
 
 - **初始化順序：** `docker compose up -d db` → `alembic upgrade head` → `python -m app.cli create-admin` →（demo）`python -m app.cli seed-demo` 建立 SRS 第 9 節場景，`APP_ENV=production` 時拒絕執行。
-- **備份與還原（NFR-06）：** 腳本在容器內執行 `pg_dump -Fc`，以 `docker compose cp` 取出；還原順序為停後端、`pg_restore --clean --if-exists --no-owner`、`python -m app.cli verify-stock`、比對批次與異動筆數。
+- **備份與還原（NFR-06，Story 9.1）：** `scripts/backup.sh` 在容器內執行 `pg_dump -Fc`，以 `docker compose cp` 取出到 `backups/`，同時寫一份同名 `.counts`（批次筆數、異動筆數、Alembic 版本）。`scripts/restore.sh` 的順序為：確認目前 schema 版本與備份相同、確認後端已停（資料庫沒有其他連線）、`pg_restore --clean --if-exists --no-owner --single-transaction`（失敗時整筆回復）、`python -m app.cli verify-stock`、與 `.counts` 比對批次與異動筆數，不一致時以非零狀態結束。Windows 在 Git Bash 執行。
 - **庫存核對（NFR-03、SM-2）：** `python -m app.cli verify-stock` 檢查每批次 `remaining_quantity == SUM(quantity_delta)`、最新一筆 `quantity_after == remaining_quantity`、每筆 `WASTE` 異動都有 `waste_record`；有差異時以非零狀態結束，併發整合測試結尾也執行。
 
 ### 原始碼結構
@@ -365,7 +365,7 @@ foodflow/
   docker/initdb/01-create-test-db.sql
   .env.example
   .nvmrc
-  scripts/                       # backup.sh、restore.sh
+  scripts/                       # backup.sh、restore.sh、ai-evidence/、ship.mjs
   backend/
     pyproject.toml  uv.lock  .python-version
     alembic/versions/
@@ -373,12 +373,13 @@ foodflow/
     app/
       main.py                    # 建立 app、掛 router、exception handler、靜態檔
       cli.py                     # create-admin、seed-demo、verify-stock
-      core/                      # config、db、uow、clock、errors、types、enums、dependencies
+      core/                      # config、db、uow、clock、errors、types、enums、dependencies、idempotency
       db/models/                 # 12 個 ORM 模型（AD-3）
       db/queries/stock_levels.py # 共用唯讀查詢（AD-21）
-      domain/                    # expiry.py、stock.py
+      domain/                    # expiry.py、stock.py、units.py
       modules/
-        <m>/                     # router、schemas、service、repository、repository_sqlalchemy、dependencies
+        <m>/                     # router、schemas、service、repository、repository_sqlalchemy、dependencies（errors 選用）
+        health/                  # GET /health，不在 /api/v1 之下、不需登入
         inventory/               # ledger.py、ledger_sqlalchemy.py（AD-20）
         issue/strategies/        # base、fefo_strategy、manual_strategy
         alerts/rules/            # base、expired_rule、expiring_today_rule、expiring_soon_rule、low_stock_rule
@@ -389,12 +390,13 @@ foodflow/
   frontend/
     package.json  package-lock.json  .npmrc  postcss.config.cjs
     src/
-      app/                       # router.tsx、providers、layout
+      app/                       # router.tsx、providers、layout、theme.ts、theme.css
       shared/api/                # client.ts、queryKeys.ts、schema.d.ts
       shared/hooks/              # useIdempotencyKey
       shared/routes.ts
-      shared/ui/                 # StatusBadge、statusBadgeMap.ts
-      features/<f>/              # api.ts、hooks.ts、components/、pages/
+      shared/ui/                 # PageHeader、Toolbar、DataTable、EmptyState、FormModal、StatusBadge、
+                                 # statusBadgeMap.ts、Quantity、ActiveBadge、CodeTag、StorageTypeIcon、icons
+      features/<f>/              # api.ts、hooks.ts、components/、pages/（資料夾名稱同後端模組）
 ```
 
 ### 資料表關聯
@@ -457,7 +459,7 @@ erDiagram
 | NFR-02、NFR-03 | AD-5～AD-8、AD-20、`verify-stock` | Ken `[ASSUMPTION]` |
 | NFR-04 | AD-15 | 謝文佳 |
 | NFR-05 | AD-16、AD-18 | 各 feature |
-| NFR-06 | 備份與還原腳本 | Ken `[ASSUMPTION]` |
+| NFR-06 | 備份與還原腳本（Story 9.1） | Ken |
 | NFR-07 | 期末壓力測試（見 Deferred） | 待指派 |
 | NFR-08 | AD-1、AD-2、AD-12～AD-14 | 全組 |
 
@@ -467,10 +469,10 @@ erDiagram
 
 | 情境 | 新增 | 修改 | 不用改 |
 | --- | --- | --- | --- |
-| **C1 新增預警規則** | `app/modules/alerts/rules/<new>_rule.py`；`backend/tests/unit/alerts/test_<new>_rule.py` | `alerts/rule_factory.py`（註冊一行）；`alerts/rules/base.py`（`AlertKind` 加一個值）；`frontend/src/shared/ui/statusBadgeMap.ts`（顯示文字與顏色）；重新產生 `schema.d.ts` | 既有四個規則、`AlertService`、`router.py`、`Notifier` |
+| **C1 新增預警規則** | `app/modules/alerts/rules/<new>_rule.py`；`backend/tests/unit/test_<new>_rule.py` | `alerts/rule_factory.py`（註冊一行）；`alerts/rules/base.py`（`AlertKind` 加一個值）；`frontend/src/shared/ui/statusBadgeMap.ts`（顯示文字與顏色）；重新產生 `schema.d.ts` | 既有四個規則、`AlertService`、`router.py`、`Notifier` |
 | **C2 換挑批次規則**（例如改 FIFO） | `app/modules/issue/strategies/<new>_strategy.py`；對應單元測試 | `issue/dependencies.py`（換注入的預設策略一行） | `IssueService`、`ManualStrategy`、`router.py`、`StockLedger`、Repository、前端 |
 | **C3 加外部通知** | `app/modules/alerts/notifiers/<channel>_notifier.py`；`app/jobs/daily_alert_digest.py`（排程進入點，以 `build_alerts_service` 組裝後呼叫 `evaluate()`）；對應測試 | `core/config.py`、`.env.example`（通道設定）；`docker-compose.yml` 或系統排程（觸發 job）；`pyproject.toml`（若需要新套件） | 所有 `AlertRule`、`AlertRuleFactory`、`InAppNotifier`、`AlertService`、`alerts/dependencies.py`、`router.py`、前端 |
-| **C4 換資料庫**（例如 MySQL） | 新資料庫的 baseline migration | `docker-compose.yml`、`docker/initdb/`、`.env.example`、`pyproject.toml`（driver）；`core/db.py`；`alembic/env.py`；`db/models/` 與 `db/queries/`（僅不相容的型別或語法）；`modules/*/repository_sqlalchemy.py`、`inventory/ledger_sqlalchemy.py`（僅不相容的查詢）；`scripts/backup.sh`、`restore.sh` | 所有 `service.py`、`router.py`、`schemas.py`、Domain、Repository 介面、`StockLedger` 介面、前端 |
+| **C4 換資料庫**（例如 MySQL） | 新資料庫的 baseline migration | `docker-compose.yml`、`docker/initdb/`、`.env.example`、`pyproject.toml`（driver）；`core/db.py`；`alembic/env.py`；`db/models/` 與 `db/queries/`（僅不相容的型別或語法）；`modules/*/repository_sqlalchemy.py`、`inventory/ledger_sqlalchemy.py`（僅不相容的查詢）；`core/db.py` 的 `for_update(key_share=True)`（`FOR NO KEY UPDATE` 為 PostgreSQL 語法）；`scripts/backup.sh`、`restore.sh`（`pg_dump`／`pg_restore` 與 `.counts` 的 SQL） | 所有 `service.py`、`router.py`、`schemas.py`、Domain、Repository 介面、`StockLedger` 介面、前端 |
 | **C5 測試跨日** | `backend/tests/` 下的測試案例 | 無正式程式碼。單元測試注入 `FixedClock`；API 測試用 `app.dependency_overrides[get_clock]`（`core/dependencies.py` 的唯一定義）；手動驗收設定 `APP_FIXED_NOW` | `SystemClock`、`service.py`、`router.py`、Domain、Repository |
 
 補充：
@@ -491,7 +493,7 @@ erDiagram
 | NFR-07 負載測試（`seed-load-test`、工具選型） | 已確認排在期末；負責人待定 |
 | 其他「檢查後寫入」競態（例如停用位置） | 機率低、可人工更正；列入測試報告的已知限制 |
 | 欄位細節與索引 | 由 11/6 的 migration 決定；索引依 NFR-07 測試結果調整 |
-| 視覺設計 | 使用 Mantine 預設元件；互動規則已由 AD-23 固定 |
+| ~~視覺設計~~ | 已完成：視覺規範為 `docs/design/DESIGN.md`，實作為 `frontend/src/app/theme.ts`；色碼只能寫在主題，`src/features/**` 由 ESLint 擋住寫死的色碼；共用元件見 `frontend/src/shared/ui/` |
 
 ## 已確認決策
 

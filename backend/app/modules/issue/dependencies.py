@@ -14,11 +14,7 @@ from app.modules.issue.strategies import FefoStrategy, ManualStrategy
 DEFAULT_STRATEGY = FefoStrategy
 
 
-def get_issue_service(
-    session: Session = Depends(get_session),
-    uow: UnitOfWork = Depends(get_uow),
-    clock: Clock = Depends(get_clock),
-) -> IssueService:
+def build_issue_service(session: Session, uow: UnitOfWork, clock: Clock) -> IssueService:
     return IssueService(
         SqlAlchemyIssueRepository(session),
         SqlAlchemyStockLedger(session),
@@ -27,3 +23,11 @@ def get_issue_service(
         default_strategy=DEFAULT_STRATEGY(),
         manual_strategy=ManualStrategy(),
     )
+
+
+def get_issue_service(
+    session: Session = Depends(get_session),
+    uow: UnitOfWork = Depends(get_uow),
+    clock: Clock = Depends(get_clock),
+) -> IssueService:
+    return build_issue_service(session, uow, clock)

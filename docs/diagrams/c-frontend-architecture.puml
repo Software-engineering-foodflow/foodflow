@@ -1,0 +1,48 @@
+@startuml c-frontend-architecture
+title 食序 FoodFlow 前端架構圖
+top to bottom direction
+skinparam shadowing false
+skinparam nodesep 30
+skinparam ranksep 40
+
+rectangle "app/（全站組裝）" as app {
+  component "providers.tsx\nMantine 主題、TanStack Query" as providers
+  component "router.tsx\n路由集中" as router
+  component "layout.tsx\n側欄與頁框" as layout
+  component "theme.ts、theme.css\n色票與 --ff-* 變數" as theme
+}
+
+rectangle "features/<f>/（每個功能一個資料夾）" as feature {
+  component "pages/\n頁面" as pages
+  component "components/\n功能內元件" as comps
+  component "hooks.ts\nuseQuery / useMutation" as hooks
+  component "api.ts\n端點函式與型別別名" as api
+  pages --> comps
+  pages --> hooks
+  comps --> hooks
+  hooks --> api
+}
+
+rectangle "shared/（跨功能共用）" as shared {
+  component "ui/\nPageHeader、DataTable、StatusBadge …" as ui
+  component "api/client.ts\n唯一發請求的地方" as client
+  component "api/queryKeys.ts\nquery key 與 invalidateStockQueries" as keys
+  component "api/schema.d.ts\n由 OpenAPI 產生" as schema
+  component "routes.ts、hooks/useIdempotencyKey" as misc
+}
+
+file "docs/design/DESIGN.md\n視覺規範" as design
+node "後端 /api/v1" as backend
+
+router --> pages
+router --> layout
+providers --> theme
+pages --> ui
+comps --> ui
+hooks --> keys
+api --> client
+api ..> schema : 型別
+ui ..> theme : 色票
+design ..> theme : 依規範定義 token
+client --> backend : HTTP（同源）
+@enduml
