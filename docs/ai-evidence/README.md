@@ -30,5 +30,5 @@
 | 2026-11-08 14:05 | 黃予岑 | feat/ops-backup-restore | 以 docs/design/storage-demo.html作為視覺基準，為食… | 37 | [20261108-mintguesss-097d9c94](20261108-mintguesss-097d9c94/) |
 | 2026-11-08 14:05 | 黃予岑 | feat/storage-location | /bmad-agent-dev | 1 | [20261108-mintguesss-8cbcef45](20261108-mintguesss-8cbcef45/) |
 | 2026-11-08 17:26 | 黃予岑 | feat/fefo-issue | <task-notification> | 11 | [20261108-mintguesss-35da92f7](20261108-mintguesss-35da92f7/) |
-| 2026-11-09 13:47 | 黃予岑 | docs/c-final | <pasted_content id="be60"> | 5 | [20261109-mintguesss-511b588d](20261109-mintguesss-511b588d/) |
-| 2026-11-09 14:12 | 黃予岑 | feat/ops-backup-restore | 核准並繼續 | 7 | [20261109-mintguesss-98f47363](20261109-mintguesss-98f47363/) |
+| 2026-11-09 13:47 | 黃予岑 | docs/c-final | <pasted_content id="be60"> | 7 | [20261109-mintguesss-511b588d](20261109-mintguesss-511b588d/) |
+| 2026-11-09 14:12 | 黃予岑 | feat/backup | 核准並繼續 | 9 | [20261109-mintguesss-98f47363](20261109-mintguesss-98f47363/) |

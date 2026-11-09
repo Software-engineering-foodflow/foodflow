@@ -13,12 +13,26 @@ from app.modules.storage_location.repository_sqlalchemy import (
 from app.modules.storage_location.service import BatchRelocationService, StorageLocationService
 
 
+def build_storage_location_service(
+    session: Session, uow: UnitOfWork, clock: Clock
+) -> StorageLocationService:
+    return StorageLocationService(SqlAlchemyStorageLocationRepository(session), uow, clock)
+
+
+def build_batch_relocation_service(
+    session: Session, uow: UnitOfWork, clock: Clock
+) -> BatchRelocationService:
+    return BatchRelocationService(
+        SqlAlchemyStorageLocationRepository(session), SqlAlchemyStockLedger(session), uow, clock
+    )
+
+
 def get_storage_location_service(
     session: Session = Depends(get_session),
     uow: UnitOfWork = Depends(get_uow),
     clock: Clock = Depends(get_clock),
 ) -> StorageLocationService:
-    return StorageLocationService(SqlAlchemyStorageLocationRepository(session), uow, clock)
+    return build_storage_location_service(session, uow, clock)
 
 
 def get_batch_relocation_service(
@@ -26,6 +40,4 @@ def get_batch_relocation_service(
     uow: UnitOfWork = Depends(get_uow),
     clock: Clock = Depends(get_clock),
 ) -> BatchRelocationService:
-    return BatchRelocationService(
-        SqlAlchemyStorageLocationRepository(session), SqlAlchemyStockLedger(session), uow, clock
-    )
+    return build_batch_relocation_service(session, uow, clock)
