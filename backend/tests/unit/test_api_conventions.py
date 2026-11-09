@@ -49,6 +49,18 @@ PRODUCTION_API_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/issues/suggestions"),
     ("POST", "/api/v1/issues"),
     ("POST", "/api/v1/issues/{operation_group_id}/reversal"),
+    ("GET", "/api/v1/ingredient-categories"),
+    ("POST", "/api/v1/ingredient-categories"),
+    ("PATCH", "/api/v1/ingredient-categories/{record_id}"),
+    ("DELETE", "/api/v1/ingredient-categories/{record_id}"),
+    ("GET", "/api/v1/ingredients"),
+    ("POST", "/api/v1/ingredients"),
+    ("PATCH", "/api/v1/ingredients/{record_id}"),
+    ("DELETE", "/api/v1/ingredients/{record_id}"),
+    ("GET", "/api/v1/suppliers"),
+    ("POST", "/api/v1/suppliers"),
+    ("PATCH", "/api/v1/suppliers/{record_id}"),
+    ("DELETE", "/api/v1/suppliers/{record_id}"),
 }
 
 

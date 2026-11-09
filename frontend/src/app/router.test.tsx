@@ -8,9 +8,6 @@ const placeholders = [
   [routes.home, "預警首頁", "謝文佳", "FR-12、FR-13、FR-14"],
   [routes.inventory, "庫存", "ChiaJungTien", "FR-08、FR-09"],
   [routes.goodsReceipts, "進貨", "ChiaJungTien", "FR-06、FR-07"],
-  [routes.ingredients, "食材", "謝文佳", "FR-03"],
-  [routes.ingredientCategories, "分類", "謝文佳", "FR-03"],
-  [routes.suppliers, "供應商", "謝文佳", "FR-04"],
 ] as const;
 
 describe("router", () => {
@@ -18,6 +15,16 @@ describe("router", () => {
     renderApp(path);
     expect(await screen.findByRole("heading", { level: 1, name: title })).toBeTruthy();
     expect(screen.queryByText("此功能由 郭明儒 負責，開發中")).toBeNull();
+  });
+  it.each([
+    [routes.ingredients, "食材管理", "新增食材"],
+    [routes.ingredientCategories, "食材分類", "新增分類"],
+    [routes.suppliers, "供應商", "新增供應商"],
+  ])("mounts %s as a working master data page", async (path, title, action) => {
+    renderApp(path);
+    expect(await screen.findByRole("heading", { level: 1, name: title })).toBeTruthy();
+    expect(screen.getByRole("button", { name: action })).toBeTruthy();
+    expect(screen.queryByText("功能開發中")).toBeNull();
   });
   it.each(placeholders)("mounts %s as the %s placeholder", async (path, title, owner, fr) => {
     renderApp(path);
