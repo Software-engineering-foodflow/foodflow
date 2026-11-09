@@ -13,15 +13,11 @@
 | 2026-11-05 14:30 | 黃予岑 | chore/ui-shell | <pasted_content id="e69a"> | 13 | [20261105-mintguesss-470d0799](20261105-mintguesss-470d0799/) |
 | 2026-11-05 23:14 | 謝文佳 | main | <external_codex_apps_open_page>{"page_id… | 9 | [20261105-joyjoy0122-01a1ac43](20261105-joyjoy0122-01a1ac43/) |
 | 2026-11-05 23:18 | user |  | <external_codex_apps_open_page>{"page_id… | 10 | [20261105-user-01a1ac49](20261105-user-01a1ac49/) |
-| 2026-11-05 23:18 | user |  | <external_codex_apps_open_page>{"page_id… | 10 | [20261105-user-01a1ac49](20261105-user-01a1ac49/) |
 | 2026-11-05 23:33 | 謝文佳 | main | <external_codex_apps_open_page>{"page_id… | 3 | [20261105-joyjoy0122-01a1ac57](20261105-joyjoy0122-01a1ac57/) |
-| 2026-11-06 00:16 | user |  | The following is the Codex agent history… | 17 | [20261106-user-01a1ac49](20261106-user-01a1ac49/) |
 | 2026-11-06 00:16 | user |  | The following is the Codex agent history… | 17 | [20261106-user-01a1ac49](20261106-user-01a1ac49/) |
 | 2026-11-06 00:39 | 謝文佳 | main | <external_codex_apps_open_page>{"page_id… | 7 | [20261106-joyjoy0122-01a1ac75](20261106-joyjoy0122-01a1ac75/) |
 | 2026-11-06 01:41 | user | main | The following is the Codex agent history… | 9 | [20261106-user-01a1accc](20261106-user-01a1accc/) |
-| 2026-11-06 01:41 | user | main | The following is the Codex agent history… | 9 | [20261106-user-01a1accc](20261106-user-01a1accc/) |
 | 2026-11-06 02:06 | 謝文佳 | main | <external_codex_apps_open_page>{"page_id… | 2 | [20261106-joyjoy0122-01a1ace4](20261106-joyjoy0122-01a1ace4/) |
-| 2026-11-06 02:07 | user | feat/auth | The following is the Codex agent history… | 1 | [20261106-user-01a1ace2](20261106-user-01a1ace2/) |
 | 2026-11-06 02:07 | user | feat/auth | The following is the Codex agent history… | 1 | [20261106-user-01a1ace2](20261106-user-01a1ace2/) |
 | 2026-11-06 02:47 | 黃予岑 | chore/ui-shell | 開分支已在 chore/ui-shell。請延續 frontend/src/ap… | 5 | [20261106-mintguesss-9a09bb59](20261106-mintguesss-9a09bb59/) |
 | 2026-11-06 16:46 | 黃予岑 | feat/storage-location | 做 Story 2.1\ | 20 | [20261106-mintguesss-c53e7785](20261106-mintguesss-c53e7785/) |
@@ -30,7 +26,9 @@
 | 2026-11-08 14:05 | 黃予岑 | feat/ops-backup-restore | 以 docs/design/storage-demo.html作為視覺基準，為食… | 37 | [20261108-mintguesss-097d9c94](20261108-mintguesss-097d9c94/) |
 | 2026-11-08 14:05 | 黃予岑 | feat/storage-location | /bmad-agent-dev | 1 | [20261108-mintguesss-8cbcef45](20261108-mintguesss-8cbcef45/) |
 | 2026-11-08 17:26 | 黃予岑 | feat/fefo-issue | <task-notification> | 11 | [20261108-mintguesss-35da92f7](20261108-mintguesss-35da92f7/) |
+| 2026-11-08～11-09 | 謝文佳 | feat/master-data-fr03-fr04 | FR-03／04 食材分類、食材與供應商實作及驗收 | 15 | [20261108-user-01a1bb95](20261108-user-01a1bb95/) |
+| 2026-11-09 13:08 | ChiaJungTien | feat/goods-receipt | B 圖表排版、內容核對與泳道圖（待確認） | 18 | [20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49](20261109-chiajungtien-b-diagrams-swimlanes-01a1ac49/) |
 | 2026-11-09 13:47 | 黃予岑 | docs/c-final | <pasted_content id="be60"> | 7 | [20261109-mintguesss-511b588d](20261109-mintguesss-511b588d/) |
 | 2026-11-09 14:12 | 黃予岑 | feat/backup | 核准並繼續 | 9 | [20261109-mintguesss-98f47363](20261109-mintguesss-98f47363/) |
-| 2026-11-08～11-09 | 謝文佳 | feat/master-data-fr03-fr04 | FR-03／04 食材分類、食材與供應商實作及驗收 | 15 | [20261108-user-01a1bb95](20261108-user-01a1bb95/) |
+| 2026-11-09 21:01 | ChiaJungTien | feat/goods-receipt | 全系統泳道圖、B 文件第三至第五章與 main 同步（補充） | 4 | [20261109-chiajungtien-b-system-swimlane-report-01a1ac49](20261109-chiajungtien-b-system-swimlane-report-01a1ac49/) |
 | 2026-11-09 21:01 | 謝文佳 | feat/alerts-expiry-low-stock | FR-12～14 效期與低庫存預警實作及驗收 | 9 | [20261109-user-01a1c066](20261109-user-01a1c066/) |

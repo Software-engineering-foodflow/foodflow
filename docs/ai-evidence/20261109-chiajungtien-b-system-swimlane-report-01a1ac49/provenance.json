@@ -1,0 +1,28 @@
+{
+  "source": "C:/Users/user/.codex/sessions/2026/11/09/rollout-2026-11-09T21-01-05-01a1ac49-d2fd-7202-a4e6-b610040b0409_01a1c065-e5b0-7302-b82a-c448e5fdcd9a.jsonl",
+  "sha256": "c979450e9269bb1a77694311360ecfa90bd1eef77e9cdebf9d0a9552ae5ebbc5",
+  "scope": "Full-system swimlane correction, removal of two feature diagrams, B sections 3–5, latest main fetch; excludes ongoing evidence-generation turn",
+  "turnMap": [
+    {
+      "evidenceTurn": 1,
+      "sourceTurn": 1,
+      "time": "2026-11-09T13:01:07.453Z"
+    },
+    {
+      "evidenceTurn": 2,
+      "sourceTurn": 3,
+      "time": "2026-11-09T13:11:57.336Z"
+    },
+    {
+      "evidenceTurn": 3,
+      "sourceTurn": 4,
+      "time": "2026-11-09T13:22:15.995Z"
+    },
+    {
+      "evidenceTurn": 4,
+      "sourceTurn": 5,
+      "time": "2026-11-09T13:43:02.329Z"
+    }
+  ],
+  "method": "Existing capture.mjs parsing, redaction and screenshot rendering helpers; rows drafted by the current assistant; all rows await human confirmation"
+}

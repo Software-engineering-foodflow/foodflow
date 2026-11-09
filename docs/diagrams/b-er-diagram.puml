@@ -1,33 +1,34 @@
 @startuml b-er-diagram
-title 食序 FoodFlow｜實體關聯圖（完整欄位）
+title 食序 FoodFlow｜完整 ER 圖
+' Presentation only: original 12 tables, 93 columns, 20 FK relationships.
+' Hidden links and norank are layout constraints, never domain relationships.
 top to bottom direction
 hide circle
+skinparam linetype ortho
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
 skinparam defaultFontSize 13
-skinparam packageStyle rectangle
-skinparam roundcorner 8
-skinparam nodesep 45
-skinparam ranksep 65
+skinparam classBorderColor #25859A
+skinparam classBackgroundColor #FFFFFF
+skinparam classHeaderBackgroundColor #FFFDE7
+skinparam ArrowColor #6A929D
 skinparam ArrowFontSize 11
-skinparam ArrowColor #475569
-skinparam classBorderColor #64748B
-skinparam classBackgroundColor white
-
-package "基本資料" #EFF6FF {
-  entity "員工\nemployee" as employee {
+skinparam nodesep 105
+skinparam ranksep 140
+skinparam padding 5
+skinparam roundcorner 0
+skinparam dpi 110
+together {
+  entity "供應商\nsupplier" as supplier {
     * id : bigint <<PK>>
     --
-    * username : varchar(64) <<UQ>>
-    * password_hash : varchar(255)
     * name : varchar(100)
-    * role : varchar(32)
+      contact_person : varchar(100)
+      phone : varchar(32)
+      other_contact : varchar(255)
     * is_active : boolean
-    * token_version : integer
-    * created_at : timestamptz
   }
-
   entity "食材分類\ningredient_category" as ingredient_category {
     * id : bigint <<PK>>
     --
@@ -37,7 +38,6 @@ package "基本資料" #EFF6FF {
     * is_active : boolean
     * created_at : timestamptz
   }
-
   entity "食材\ningredient" as ingredient {
     * id : bigint <<PK>>
     --
@@ -49,17 +49,6 @@ package "基本資料" #EFF6FF {
     * is_active : boolean
     * created_at : timestamptz
   }
-
-  entity "供應商\nsupplier" as supplier {
-    * id : bigint <<PK>>
-    --
-    * name : varchar(100)
-      contact_person : varchar(100)
-      phone : varchar(32)
-      other_contact : varchar(255)
-    * is_active : boolean
-  }
-
   entity "儲存位置\nstorage_location" as storage_location {
     * id : bigint <<PK>>
     --
@@ -69,9 +58,33 @@ package "基本資料" #EFF6FF {
       description : text
     * is_active : boolean
   }
-
+  entity "員工\nemployee" as employee {
+    * id : bigint <<PK>>
+    --
+    * username : varchar(64) <<UQ>>
+    * password_hash : varchar(255)
+    * name : varchar(100)
+    * role : varchar(32)
+    * is_active : boolean
+    * token_version : integer
+    * created_at : timestamptz
+  }
+  entity "預警設定\nalert_setting" as alert_setting {
+    * id : bigint <<PK>>
+    --
+    * name : varchar(100)
+    * warning_days : integer
+    * created_at : timestamptz
+    * updated_at : timestamptz
+      updated_by_id : bigint <<FK>>
+  }
 }
-package "進貨" #ECFDF5 {
+supplier -[hidden]right-> ingredient_category
+ingredient_category -[hidden]right-> ingredient
+ingredient -[hidden]right-> storage_location
+storage_location -[hidden]right-> employee
+employee -[hidden]right-> alert_setting
+together {
   entity "進貨單\ngoods_receipt" as goods_receipt {
     * id : bigint <<PK>>
     --
@@ -82,7 +95,6 @@ package "進貨" #ECFDF5 {
     * created_at : timestamptz
       confirmed_at : timestamptz
   }
-
   entity "進貨明細\ngoods_receipt_item" as goods_receipt_item {
     * id : bigint <<PK>>
     --
@@ -94,9 +106,6 @@ package "進貨" #ECFDF5 {
       location_id : bigint <<FK>>
       note : text
   }
-
-}
-package "庫存與追溯" #FFF7ED {
   entity "庫存批次\ninventory_batch" as inventory_batch {
     * id : bigint <<PK>>
     --
@@ -110,7 +119,6 @@ package "庫存與追溯" #FFF7ED {
     * initial_quantity : numeric(12,3)
     * remaining_quantity : numeric(12,3)
   }
-
   entity "庫存異動\ninventory_transaction" as inventory_transaction {
     * id : bigint <<PK>>
     --
@@ -126,7 +134,6 @@ package "庫存與追溯" #FFF7ED {
     * is_non_fefo : boolean
       reverses_transaction_id : bigint <<FK>> <<UQ>>
   }
-
   entity "報廢紀錄\nwaste_record" as waste_record {
     * id : bigint <<PK>>
     --
@@ -139,7 +146,6 @@ package "庫存與追溯" #FFF7ED {
     * operator_id : bigint <<FK>>
     * occurred_at : timestamptz
   }
-
   entity "位置變更紀錄\nbatch_location_change" as batch_location_change {
     * id : bigint <<PK>>
     --
@@ -150,42 +156,40 @@ package "庫存與追溯" #FFF7ED {
     * occurred_at : timestamptz
     * reason : text
   }
-
 }
-package "預警設定" #F5F3FF {
-  entity "預警設定\nalert_setting" as alert_setting {
-    * id : bigint <<PK>>
-    --
-    * name : varchar(100)
-    * warning_days : integer
-    * created_at : timestamptz
-    * updated_at : timestamptz
-      updated_by_id : bigint <<FK>>
-  }
-
-}
-employee |o..o{ alert_setting : updated_by_id
-inventory_batch ||--o{ batch_location_change : batch_id
-storage_location ||--o{ batch_location_change : from_location_id
-employee ||..o{ batch_location_change : operator_id
-storage_location ||--o{ batch_location_change : to_location_id
-employee ||..o{ goods_receipt : created_by_id
-supplier ||--o{ goods_receipt : supplier_id
-ingredient ||--o{ goods_receipt_item : ingredient_id
-storage_location |o--o{ goods_receipt_item : location_id
-goods_receipt ||--o{ goods_receipt_item : receipt_id
-ingredient_category ||--o{ ingredient : category_id
-storage_location ||--o{ inventory_batch : current_location_id
-ingredient ||--o{ inventory_batch : ingredient_id
-goods_receipt_item ||--o| inventory_batch : source_item_id
-inventory_batch ||--o{ inventory_transaction : batch_id
-employee ||..o{ inventory_transaction : operator_id
-inventory_transaction |o--o| inventory_transaction : reverses_transaction_id
-inventory_batch ||--o{ waste_record : batch_id
-employee ||..o{ waste_record : operator_id
-inventory_transaction ||--o| waste_record : transaction_id
-
+goods_receipt -[hidden]right-> goods_receipt_item
+goods_receipt_item -[hidden]right-> inventory_batch
+inventory_batch -[hidden]right-> inventory_transaction
+inventory_transaction -[hidden]right-> waste_record
+waste_record -[hidden]right-> batch_location_change
+supplier -[hidden]down-> goods_receipt
+ingredient_category -[hidden]down-> goods_receipt_item
+ingredient -[hidden]down-> inventory_batch
+storage_location -[hidden]down-> inventory_transaction
+employee -[hidden]down-> waste_record
+alert_setting -[hidden]down-> batch_location_change
+employee |o.[norank].o{ alert_setting : updated_by_id
+inventory_batch ||-[norank]-o{ batch_location_change : batch_id
+storage_location ||-[norank]-o{ batch_location_change : from_location_id
+employee ||.[norank].o{ batch_location_change : operator_id
+storage_location ||-[norank]-o{ batch_location_change : to_location_id
+employee ||.[norank].o{ goods_receipt : created_by_id
+supplier ||-[norank]-o{ goods_receipt : supplier_id
+ingredient ||-[norank]-o{ goods_receipt_item : ingredient_id
+storage_location |o-[norank]-o{ goods_receipt_item : location_id
+goods_receipt ||-[norank]-o{ goods_receipt_item : receipt_id
+ingredient_category ||-[norank]-o{ ingredient : category_id
+storage_location ||-[norank]-o{ inventory_batch : current_location_id
+ingredient ||-[norank]-o{ inventory_batch : ingredient_id
+goods_receipt_item ||-[norank]-o| inventory_batch : source_item_id
+inventory_batch ||-[norank]-o{ inventory_transaction : batch_id
+employee ||.[norank].o{ inventory_transaction : operator_id
+inventory_transaction |o-[norank]-o| inventory_transaction : reverses_transaction_id
+inventory_batch ||-[norank]-o{ waste_record : batch_id
+employee ||.[norank].o{ waste_record : operator_id
+inventory_transaction ||-[norank]-o| waste_record : transaction_id
 legend bottom left
+  線條交叉不是關聯分支；隱藏輔助線不會顯示
   PK 主鍵｜FK 外鍵｜UQ 單欄唯一
   欄位前 ●（原始碼 *）表示 NOT NULL；無圓點表示可空
   || = 1；|o / o| = 0..1；o{ = 0..N

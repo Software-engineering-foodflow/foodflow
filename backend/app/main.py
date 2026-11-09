@@ -24,7 +24,9 @@ from app.modules.alerts.router import router as alerts_router
 from app.modules.auth.dependencies import get_current_employee
 from app.modules.auth.router import public_router as auth_public_router
 from app.modules.auth.router import router as auth_router
+from app.modules.goods_receipt.router import router as goods_receipt_router
 from app.modules.health.router import router as health_router
+from app.modules.inventory.router import router as inventory_router
 from app.modules.issue.router import router as issue_router
 from app.modules.master_data.router import router as master_data_router
 from app.modules.reports.router import router as reports_router
@@ -160,6 +162,8 @@ def create_app(
     api_router.include_router(reports_router)
     api_router.include_router(stocktake_router)
     api_router.include_router(master_data_router)
+    api_router.include_router(goods_receipt_router)
+    api_router.include_router(inventory_router)
     for router in extra_api_routers:
         api_router.include_router(router)
     app.include_router(api_router)

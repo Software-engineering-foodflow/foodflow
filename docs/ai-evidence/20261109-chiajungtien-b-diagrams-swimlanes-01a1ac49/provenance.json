@@ -1,0 +1,98 @@
+{
+  "source": "C:\\Users\\user\\.codex\\sessions\\2026\\11\\09\\rollout-2026-11-09T13-06-57-01a1ac49-d2fd-7202-a4e6-b610040b0409_01a1beb3-d090-7d22-9c98-5c9badab1be4.jsonl",
+  "sha256": "c7f0e915ec1bfd1b776eda2db5fef3ed56517606013ee4007830265fbae8a550",
+  "scope": "B diagrams through swimlane generation; excludes ongoing evidence-generation turn",
+  "turnMap": [
+    {
+      "evidenceTurn": 1,
+      "sourceTurn": 1,
+      "time": "2026-11-09T05:08:53.660Z"
+    },
+    {
+      "evidenceTurn": 2,
+      "sourceTurn": 3,
+      "time": "2026-11-09T05:13:03.630Z"
+    },
+    {
+      "evidenceTurn": 3,
+      "sourceTurn": 4,
+      "time": "2026-11-09T05:19:45.856Z"
+    },
+    {
+      "evidenceTurn": 4,
+      "sourceTurn": 5,
+      "time": "2026-11-09T05:27:50.153Z"
+    },
+    {
+      "evidenceTurn": 5,
+      "sourceTurn": 6,
+      "time": "2026-11-09T05:36:27.988Z"
+    },
+    {
+      "evidenceTurn": 6,
+      "sourceTurn": 7,
+      "time": "2026-11-09T06:31:15.551Z"
+    },
+    {
+      "evidenceTurn": 7,
+      "sourceTurn": 8,
+      "time": "2026-11-09T06:36:19.688Z"
+    },
+    {
+      "evidenceTurn": 8,
+      "sourceTurn": 9,
+      "time": "2026-11-09T06:47:31.128Z"
+    },
+    {
+      "evidenceTurn": 9,
+      "sourceTurn": 10,
+      "time": "2026-11-09T06:49:01.336Z"
+    },
+    {
+      "evidenceTurn": 10,
+      "sourceTurn": 11,
+      "time": "2026-11-09T06:53:07.418Z"
+    },
+    {
+      "evidenceTurn": 11,
+      "sourceTurn": 12,
+      "time": "2026-11-09T06:54:26.969Z"
+    },
+    {
+      "evidenceTurn": 12,
+      "sourceTurn": 13,
+      "time": "2026-11-09T06:54:57.081Z"
+    },
+    {
+      "evidenceTurn": 13,
+      "sourceTurn": 14,
+      "time": "2026-11-09T07:07:22.442Z"
+    },
+    {
+      "evidenceTurn": 14,
+      "sourceTurn": 15,
+      "time": "2026-11-09T08:29:18.443Z"
+    },
+    {
+      "evidenceTurn": 15,
+      "sourceTurn": 16,
+      "time": "2026-11-09T08:33:20.104Z"
+    },
+    {
+      "evidenceTurn": 16,
+      "sourceTurn": 17,
+      "time": "2026-11-09T09:00:37.207Z"
+    },
+    {
+      "evidenceTurn": 17,
+      "sourceTurn": 18,
+      "time": "2026-11-09T09:00:37.212Z"
+    },
+    {
+      "evidenceTurn": 18,
+      "sourceTurn": 19,
+      "time": "2026-11-09T09:11:27.358Z"
+    }
+  ],
+  "method": "Existing capture.mjs parser and rendering functions; rows drafted by the current assistant; all rows await human confirmation"
+}
