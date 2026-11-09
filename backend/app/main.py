@@ -25,7 +25,10 @@ from app.modules.auth.router import public_router as auth_public_router
 from app.modules.auth.router import router as auth_router
 from app.modules.health.router import router as health_router
 from app.modules.issue.router import router as issue_router
+from app.modules.reports.router import router as reports_router
+from app.modules.stocktake.router import router as stocktake_router
 from app.modules.storage_location.router import router as storage_location_router
+from app.modules.waste.router import router as waste_router
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +153,9 @@ def create_app(
     api_router.include_router(auth_router)
     api_router.include_router(storage_location_router)
     api_router.include_router(issue_router)
+    api_router.include_router(waste_router)
+    api_router.include_router(reports_router)
+    api_router.include_router(stocktake_router)
     for router in extra_api_routers:
         api_router.include_router(router)
     app.include_router(api_router)
