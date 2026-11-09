@@ -32,9 +32,17 @@ export const queryKeys = {
     suggestion: (body: unknown) => ["issue", "suggestion", body] as const,
   },
   alerts: { all: ["alerts"] },
-  waste: { all: ["waste"] },
-  stocktake: { all: ["stocktake"] },
-  reports: { all: ["reports"] },
+  waste: { all: ["waste"],
+    batches: (search: string, page: number) => ["waste", "batches", search, page] as const,
+    batch: (id: number | null) => ["waste", "batch", id] as const,
+    records: (page: number) => ["waste", "records", page] as const,
+  },
+  stocktake: { all: ["stocktake"],
+    batches: (search: string, page: number) => ["stocktake", "batches", search, page] as const,
+  },
+  reports: { all: ["reports"],
+    query: (kind: string, params: string) => ["reports", kind, params] as const,
+  },
 } as const;
 
 const STOCK_QUERY_ROOTS = [

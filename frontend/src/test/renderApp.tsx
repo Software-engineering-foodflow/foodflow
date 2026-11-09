@@ -25,6 +25,9 @@ export function renderApp(path: string, employee: typeof admin = admin) {
         : json(employee);
     }
     if (input === "/health") return json({ status: "ok", database: "ok" });
+    if (["/stocktakes/batches?", "/waste-records?", "/waste-records/batches?", "/inventory-transactions?", "/batch-location-changes?"].some(p => input.includes(p))) {
+      return json({ items: [], total: 0, page: 1, page_size: 20 });
+    }
     return json({ error: { code: "NOT_FOUND", message: "not stubbed", details: {}, fields: [] } }, 404);
   });
   vi.stubGlobal("fetch", fetchMock);
