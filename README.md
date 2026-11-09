@@ -126,6 +126,8 @@ git diff --exit-code -- src/shared/api/schema.d.ts
 | 灌示範資料 | `uv run python -m app.cli seed-demo`，說明見下方 | `backend/` |
 | Demo（單一 port） | 先在 `frontend/` 執行 `npm run build`，再於 `backend/` 執行 `uv run uvicorn app.main:create_app --factory --host 0.0.0.0`，打開 http://localhost:8000 （區網裝置改用本機 IP） | |
 | 固定時間測跨日 | `.env` 設 `APP_FIXED_NOW=2026-11-18T09:00:00+08:00`（`APP_ENV=production` 時無效） | |
+| 備份資料庫 | `scripts/backup.sh`，產物在 `backups/`，說明見下方 | repo 根目錄（Git Bash） |
+| 還原資料庫 | 先停後端，`scripts/restore.sh backups/<檔名>.dump`，說明見下方 | repo 根目錄（Git Bash） |
 
 ### 示範資料
 
@@ -155,6 +157,26 @@ uv run python -m app.cli verify-stock       # 灌完後應顯示「庫存核對�
 - **`--reset` 的範圍：** 會刪除帳號與預警設定以外的**所有**資料，包含你手動建立的進貨單、異動與報廢紀錄，無法復原。帳號與預警設定會保留。
 - **操作者：** 異動記在停用的 `demo-seed` 帳號（顯示為「示範資料」）名下，這個帳號是停用的，無法登入，`--reset` 也不會刪除它。
 
+### 備份與還原
+
+兩支腳本都是 bash，Windows 請在 **Git Bash** 執行（PowerShell、cmd 不行）；從任何目錄呼叫都可以。`db` 容器要在執行中，帳號與資料庫名稱取自容器設定。
+
+```bash
+scripts/backup.sh                                          # 備份
+scripts/restore.sh backups/foodflow-20261109-142535.dump   # 還原，會要求輸入 yes 確認
+scripts/restore.sh backups/foodflow-20261109-142535.dump --yes   # 略過確認
+```
+
+- **備份：** 在 `backups/` 產生 `foodflow-YYYYmmdd-HHMMSS.dump`（`pg_dump` 自訂格式）與同名 `.counts`（當下的批次、異動筆數與 schema 版本），兩個檔案要放在一起，還原時都會用到。備份期間若有人寫入資料，腳本會刪除本次產物並失敗，稍後重試或先停後端即可。`backups/` 已列入 `.gitignore`，備份含帳號的密碼雜湊，**不要 commit 或外傳**。
+- **還原步驟：**
+  1. 先執行 `scripts/backup.sh` 保留目前資料，選錯檔時才救得回來。
+  2. 停止後端（uvicorn）。腳本不會自己停後端；資料庫還有其他連線（後端、開著的 psql）時會拒絕還原，資料庫不會變更。
+  3. 執行 `scripts/restore.sh <檔案>`，輸入 `yes` 確認。資料庫會換成備份的內容，之後自動執行 `verify-stock` 並比對批次與異動筆數是否與 `.counts` 相同，全部通過才以 0 結束。
+  4. 重新啟動後端。
+- **schema 版本不同會被拒絕：** 備份與目前資料庫的 migration 版本不同時，直接還原會留下備份之後才新增的表，所以腳本在動資料庫前就拒絕，並列出兩個版本。處理方式：在 `backend/` 內執行 `uv run alembic downgrade <備份的版本>`，再還原，完成後執行 `uv run alembic upgrade head`。全新、還沒跑過 migration 的資料庫不受此限制。
+- **失敗時的資料狀態：** `pg_restore` 本身失敗時交易會回復，資料庫維持原狀。若是還原完成後的驗證（`verify-stock` 或筆數比對）失敗，資料庫**已經換成備份的內容**，不是還原前的狀態；要回到還原前，請用第 1 步做的備份再還原一次。
+- 資料存在具名 volume `db-data`，`docker compose restart db` 或重開機後資料仍在；`docker compose down -v` 會刪除 volume，執行前先備份。
+
 模組分層與規則見 [架構主幹](_bmad-output/planning-artifacts/architecture/architecture-foodflow-2026-11-05/ARCHITECTURE-SPINE.md)。寫新模組時可參考 `backend/app/modules/health/`（router → service → repository 的完整範例）；前端參考 `frontend/src/features/health/`。
 
 ## 疑難排解
@@ -166,6 +188,6 @@ uv run python -m app.cli verify-stock       # 灌完後應顯示「庫存核對�
 | 連資料庫卡住或逾時、`/health` 回 503 | `.env` 的連線字串要寫 `127.0.0.1`，不要寫 `localhost`（資料庫埠只綁 IPv4），請對照 `.env.example` |
 | 整合測試連不上資料庫 | Docker Desktop 或容器沒有啟動，執行 `docker compose up -d --wait` |
 | `database "foodflow_test" does not exist` | 舊 volume，依第 2 步手動建立 |
-| Git Bash 內 `docker compose` 出現 `docker-credential-desktop` 找不到 | 改用 PowerShell 執行 |
+| Git Bash 內 `docker compose` 出現 `docker-credential-desktop` 找不到 | 只影響拉映像（例如第一次 `docker compose up`），改用 PowerShell 執行；`scripts/backup.sh`、`scripts/restore.sh` 用到的 `exec`、`cp` 不受影響 |
 | Git Bash 內 `npm run`、`npx` 出現 `"node"` 不是內部或外部命令 | 改用 PowerShell 執行前端指令 |
 | `npm audit` 回報 moderate | 來自開發工具；不要執行 `npm audit fix --force`，它會降級 ESLint 與 openapi-typescript |

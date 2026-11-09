@@ -35,3 +35,6 @@ docs/ai-evidence/.capture.log
 
 # Office 開啟檔案時的暫存鎖檔
 ~$*
+
+# 資料庫備份（含帳號密碼雜湊，不可 commit）
+/backups/

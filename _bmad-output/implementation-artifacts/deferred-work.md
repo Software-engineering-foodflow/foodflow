@@ -20,3 +20,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-westgvva-inventory-management.md`
   summary: 報表讀取歷史與明細的效能需依NFR-07負載驗證（medium風險，未驗證）。
   evidence: 查詢載入迄日前歷史與區間明細，讀取量隨資料增長；尚無超出SRS效能目標的實測證據。SRS將NFR-07列期末，負責人待確認，若不達標再依測量決定DB聚合/明細分頁。
+- source_spec: `_bmad-output/implementation-artifacts/spec-9-1-backup-restore.md`
+  summary: `scripts/backup.sh`、`restore.sh` 的拒絕與非零結束行為沒有自動化測試，CI 不執行這兩支腳本。
+  evidence: CI 的資料庫是 GitHub Actions service container，腳本依賴 `docker compose exec/cp`，要自動化得先改 CI 架構；目前只有 spec 記錄的一次性人工矩陣實測，改腳本後需重跑該矩陣。
