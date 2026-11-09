@@ -109,5 +109,5 @@ export const SproutIcon = (props: IconProps) => <Icon {...props}>
 
 /** 側欄收合與展開。 */
 export const SidebarIcon = (props: IconProps) => <Icon {...props}>
-  <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16M14 10l-2 2 2 2" />
+  <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
 </Icon>;

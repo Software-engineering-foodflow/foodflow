@@ -122,9 +122,9 @@ export function AppLayout() {
         </Group>
       </AppShell.Header>}
       {/* 寬螢幕收合後，畫面左上角留一個展開鈕。 */}
-      {collapsedWide && <ActionIcon variant="default" size={44} radius="md" onClick={toggle} {...toggleProps}
+      {collapsedWide && <ActionIcon variant="default" size={30} radius="md" onClick={toggle} {...toggleProps} className="ff-hit-44"
         style={{ position: "fixed", top: EXPAND_INSET, left: EXPAND_INSET, zIndex: 150 }}>
-        <SidebarIcon size={18} style={{ transform: "scaleX(-1)" }} />
+        <SidebarIcon size={16} style={{ transform: "scaleX(-1)" }} />
       </ActionIcon>}
       {/* 收合時導覽列只是移出畫面，inert 讓裡面的連結不會被鍵盤聚焦。 */}
       <AppShell.Navbar id={NAVBAR_ID} p="sm" aria-label="主要導覽" inert={!opened}>
@@ -132,9 +132,9 @@ export function AppLayout() {
           <Group justify="space-between" wrap="nowrap" gap={4} pl={4}>
             <Brand />
             {/* 只在展開時可操作（收合後整個導覽列 inert），所以固定是「收合」。 */}
-            <ActionIcon variant="subtle" color="gray" size={44} radius="md" onClick={toggle}
+            <ActionIcon variant="subtle" color="gray" size={30} radius="md" onClick={toggle} className="ff-hit-44"
               aria-label="收合導覽列" aria-expanded={opened} aria-controls={NAVBAR_ID} data-sidebar-toggle>
-              <SidebarIcon size={18} />
+              <SidebarIcon size={16} />
             </ActionIcon>
           </Group>
         </AppShell.Section>}

@@ -102,3 +102,10 @@ body {
   flex: none;
   width: 150px;
 }
+
+/* 外觀較小的圖示按鈕：用透明外擴區把可點範圍補到 44px（30px + 7px × 2）。 */
+.ff-hit-44::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}

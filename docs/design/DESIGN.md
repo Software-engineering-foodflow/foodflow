@@ -17,6 +17,7 @@ colors:
   primary-700: '#2F805A'
   primary-800: '#236E4B'
   primary-900: '#145F3E'
+  primary-950: '#0D4A2F'   # 只用於主要按鈕 hover 漸層的深端
   primary: '#236E4B'
   primary-strong: '#145F3E'
   on-primary: '#FFFFFF'
@@ -35,9 +36,9 @@ colors:
   surface-subtle: '#FBFCF9'
   surface-header: '#F6F9F3'
   surface-selected: '#F1F7ED'
-  canvas-top: '#FDFEFB'
+  canvas-top: '#F4F8F3'
   canvas-mid: '#F9FBF7'
-  canvas-bottom: '#F4F8F3'
+  canvas-bottom: '#FFFFFF'
   line: '#E3EADF'
   line-soft: '#EFF3EC'
   line-selected: '#DFEADA'
@@ -46,9 +47,9 @@ colors:
   code-bg: '#EDF3E8'
   code-fg: '#3E5A45'
   # ── 側欄 ──
-  sidebar-top: '#F9FBF6'
+  sidebar-top: '#EAF2E8'
   sidebar-mid: '#F1F7EE'
-  sidebar-bottom: '#EAF2E8'
+  sidebar-bottom: '#FBFDF9'
   sidebar-fg: '#3B4E42'
   sidebar-muted: '#4F6A58'
   sidebar-icon: '#6F8A79'
@@ -165,7 +166,7 @@ components:
     icon-tile-size: 42px
     icon-tile-radius: '{rounded.lg}'
   button-primary:
-    background: 'linear-gradient(135deg, {colors.primary-800}, {colors.primary-700})'
+    background: 'linear-gradient(135deg, {colors.primary-900}, {colors.primary-700})'
     foreground: '{colors.on-primary}'
     height: '{spacing.touch-target}'
     radius: '{rounded.lg}'
@@ -230,7 +231,7 @@ components:
     overlay: '#1F2A2466'
     padding: '{spacing.6}'
   sidebar-item-active:
-    background: 'linear-gradient(90deg, {colors.primary-800}, {colors.primary-700})'
+    background: 'linear-gradient(90deg, {colors.primary-900}, {colors.primary-700})'
     foreground: '{colors.on-primary}'
     radius: '{rounded.md}'
     shadow: '0 6px 14px -8px rgba(35,110,75,.7)'
@@ -257,7 +258,7 @@ components:
 
 - **`{colors.primary}`（`#236E4B`，forest.8）**：主要按鈕、導覽選中項、連結與焦點，白字對比 6.17:1。
 - **`{colors.primary-strong}`（`#145F3E`，forest.9）**：展開列的名稱、次要按鈕文字、品牌字樣，白底對比 7.67:1。
-- **`{colors.primary-700}`（`#2F805A`）**：漸層的**淺端上限**。基準頁的按鈕漸層原本收在 `#4B9E74`，白字只有 3.26:1，所以本規範把淺端改成 `#2F805A`（4.82:1）。看起來仍有漸層感，文字也讀得清楚。
+- **`{colors.primary-700}`（`#2F805A`）**：漸層的**淺端上限**。基準頁的按鈕漸層原本收在 `#4B9E74`，白字只有 3.26:1，所以本規範把淺端改成 `#2F805A`（4.82:1）。深端從 `{colors.primary-900}` 起，橫跨兩階，漸層才看得出來，文字也讀得清楚。
 
 ### 點綴：苔黃綠
 
@@ -277,7 +278,7 @@ components:
 
 基準頁的次要文字原本是 `#76837A`、表頭是 `#7B8B80`，在 v=6 的漸層底上都低於 4.5:1，本規範各加深一階。placeholder 只做提示，所以輸入框**一定要有獨立的 label**，不可拿 placeholder 當欄位名稱。
 
-畫布底色是三段直向漸層：`{colors.canvas-top}` → `{colors.canvas-mid}` → `{colors.canvas-bottom}`（165deg），右上角再疊一層 `radial-gradient(700px 320px at 92% -40px, rgba(183,201,79,.11), transparent 70%)`。
+畫布底色是三段直向漸層：`{colors.canvas-top}` → `{colors.canvas-mid}` → `{colors.canvas-bottom}`（165deg），上方淡綠、往下漸白；右上角再疊一層 `radial-gradient(700px 320px at 92% -40px, rgba(183,201,79,.11), transparent 70%)`。
 
 ### 狀態色
 
@@ -332,7 +333,7 @@ components:
 
 **頁面結構**（由上而下）：頁面標題列 → 摘要卡列（選用）→ 主卡片（工具列＋表格）。各區塊之間的距離是 `{spacing.section-gap}` 20px。
 
-**觸控尺寸**：所有可點擊目標至少 `{spacing.touch-target}` 44×44px，包括按鈕、輸入框、下拉選單、表格內的展開鈕與「換位置」等列內操作、側欄導覽項、對話框關閉鈕。視覺比 44px 小的元素（例如 34px 的展開圖示），可點擊範圍仍要擴到 44px。表格列高至少 `{spacing.row-min}` 52px。
+**觸控尺寸**：所有可點擊目標至少 `{spacing.touch-target}` 44×44px，包括按鈕、輸入框、下拉選單、表格內的展開鈕與「換位置」等列內操作、側欄導覽項、對話框關閉鈕。視覺比 44px 小的元素（例如 34px 的展開圖示），可點擊範圍仍要擴到 44px（加 `ff-hit-44` class，例如 30px 的側欄收合鈕）。表格列高至少 `{spacing.row-min}` 52px。
 
 **斷點與版型** `[ASSUMPTION]`：
 
@@ -401,7 +402,7 @@ components:
 
 | 變體 | 外觀 | 用途 |
 |---|---|---|
-| 主要 | `{colors.primary-800}`→`{colors.primary-700}` 漸層、白字、色光陰影 | 每個畫面最多一個：新增、送出、確認 |
+| 主要 | `{colors.primary-900}`→`{colors.primary-700}` 漸層、白字、色光陰影 | 每個畫面最多一個：新增、送出、確認 |
 | 次要 | 白底、`#D6E5D6` 框、`{colors.primary-strong}` 字 | 取消、匯出、列內操作（例如「換位置」） |
 | 危險 | `{colors.danger}` 實心、白字 | 報廢、刪除、停用的最後確認 |
 | 文字 | 無底、`{colors.primary-strong}` 字 | 清除篩選、次要連結 |
