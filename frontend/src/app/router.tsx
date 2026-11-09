@@ -6,6 +6,8 @@ import { useCurrentEmployee } from "../features/auth/hooks";
 import { EmployeesPage } from "../features/auth/pages/EmployeesPage";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { GoodsReceiptsPage } from "../features/goods_receipt/pages/GoodsReceiptsPage";
+import { InventoryBatchesPage } from "../features/inventory/pages/InventoryBatchesPage";
+import { InventoryBatchHistoryPage } from "../features/inventory/pages/InventoryBatchHistoryPage";
 import { InventoryPage } from "../features/inventory/pages/InventoryPage";
 import { IssuesPage } from "../features/issue/pages/IssuesPage";
 import { IngredientCategoriesPage } from "../features/master_data/pages/IngredientCategoriesPage";
@@ -44,9 +46,12 @@ export const appRoutes: RouteObject[] = [
       { element: <AppLayout />, children: [
       { path: routes.home, element: <AlertsPage /> },
       { path: routes.inventory, element: <InventoryPage /> },
+      { path: routes.inventoryBatches, element: <InventoryBatchesPage /> },
+      { path: routes.inventoryBatchHistory, element: <InventoryBatchHistoryPage /> },
       { path: routes.goodsReceipts, element: <GoodsReceiptsPage /> },
       // 預警動作的目的地；各功能完成前先顯示同一個空白頁，避免連到找不到頁面。
       { path: routes.goodsReceiptNew, element: <GoodsReceiptsPage /> },
+      { path: routes.goodsReceiptDetail, element: <GoodsReceiptsPage /> },
       { path: routes.issues, element: <IssuesPage /> },
       { path: routes.issueNew, element: <IssuesPage /> },
       { path: routes.wasteRecords, element: <WasteRecordsPage /> },
