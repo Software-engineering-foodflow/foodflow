@@ -1,0 +1,114 @@
+@startuml b-class-03-receiving
+title 食序 FoodFlow｜進貨與批次入庫管理領域類別圖
+caption FR-06、FR-07｜局部視圖，完整關聯見原始總覽圖
+left to right direction
+hide circle
+skinparam linetype polyline
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft JhengHei
+skinparam defaultFontSize 14
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #64748B
+skinparam ArrowColor #475569
+skinparam ArrowFontSize 12
+skinparam nodesep 55
+skinparam ranksep 100
+skinparam padding 6
+skinparam dpi 120
+
+class "供應商\nSupplier" as Supplier <<entity>> #EFF6FF {
+  +id : int
+  +name : str
+  +contact_person : str | None
+  +phone : str | None
+  +other_contact : str | None
+  +is_active : bool
+}
+
+class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
+  +id : int
+  +username : str
+  +password_hash : str
+  +name : str
+  +role : EmployeeRole
+  +is_active : bool
+  +token_version : int
+  +created_at : datetime
+}
+
+class "進貨單\nGoodsReceipt" as GoodsReceipt <<entity>> #ECFDF5 {
+  +id : int
+  +supplier_id : int
+  +receipt_date : date
+  +status : GoodsReceiptStatus
+  +created_by_id : int
+  +created_at : datetime
+  +confirmed_at : datetime | None
+  +/receipt_number : str <<property, readOnly>>
+}
+
+class "進貨明細\nGoodsReceiptItem" as GoodsReceiptItem <<entity>> #ECFDF5 {
+  +id : int
+  +receipt_id : int
+  +ingredient_id : int
+  +quantity : Decimal | None
+  +unit_price : Decimal | None
+  +expiry_date : date | None
+  +location_id : int | None
+  +note : str | None
+}
+
+class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
+  +id : int
+  +name : str
+  +category_id : int
+  +unit : str
+  +storage_method : StorageType
+  +safety_stock_quantity : Decimal
+  +is_active : bool
+  +created_at : datetime
+}
+
+class "儲存位置\nStorageLocation" as StorageLocation <<entity>> #EFF6FF {
+  +id : int
+  +code : str
+  +name : str
+  +storage_type : StorageType
+  +description : str | None
+  +is_active : bool
+}
+
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
+  +id : int
+  +batch_number : str
+  +source_item_id : int
+  +ingredient_id : int
+  +expiry_date : date
+  +received_date : date
+  +current_location_id : int
+  +unit_price : Decimal | None
+  +initial_quantity : Decimal
+  +remaining_quantity : Decimal
+}
+
+Employee "1" -- "0..*" GoodsReceipt : created_by
+GoodsReceipt "1" -- "0..*" GoodsReceiptItem : receipt / items
+GoodsReceiptItem "1" -- "0..1" InventoryBatch : source_item
+Ingredient "1" -- "0..*" GoodsReceiptItem : ingredient
+Ingredient "1" -- "0..*" InventoryBatch : ingredient
+StorageLocation "0..1" -- "0..*" GoodsReceiptItem : location
+StorageLocation "1" -- "0..*" InventoryBatch : current_location
+Supplier "1" -- "0..*" GoodsReceipt : supplier
+
+
+legend bottom left
+  進貨草稿允許尚未建立明細或批次。
+  確認入庫的必填條件由 Service 檢查。
+  進貨明細對批次仍保留原圖 0..1 多重度。
+  ─────────────────────
+  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
+  端點數字為原圖多重度；交叉處不代表關聯或分支
+  共用類別可出現在不同模組圖；屬性均完整保留
+endlegend
+@enduml

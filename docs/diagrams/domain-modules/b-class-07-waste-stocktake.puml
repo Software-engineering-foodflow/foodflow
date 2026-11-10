@@ -1,0 +1,88 @@
+@startuml b-class-07-waste-stocktake
+title 食序 FoodFlow｜報廢與盤點管理領域類別圖
+caption FR-15、FR-16｜局部視圖，完整關聯見原始總覽圖
+left to right direction
+hide circle
+skinparam linetype polyline
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft JhengHei
+skinparam defaultFontSize 14
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #64748B
+skinparam ArrowColor #475569
+skinparam ArrowFontSize 12
+skinparam nodesep 55
+skinparam ranksep 100
+skinparam padding 6
+skinparam dpi 120
+
+class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
+  +id : int
+  +username : str
+  +password_hash : str
+  +name : str
+  +role : EmployeeRole
+  +is_active : bool
+  +token_version : int
+  +created_at : datetime
+}
+
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
+  +id : int
+  +batch_number : str
+  +source_item_id : int
+  +ingredient_id : int
+  +expiry_date : date
+  +received_date : date
+  +current_location_id : int
+  +unit_price : Decimal | None
+  +initial_quantity : Decimal
+  +remaining_quantity : Decimal
+}
+
+class "庫存異動\nInventoryTransaction" as InventoryTransaction <<entity>> #FFF7ED {
+  +id : int
+  +operation_group_id : UUID
+  +batch_id : int
+  +type : TransactionType
+  +quantity_delta : Decimal
+  +quantity_before : Decimal
+  +quantity_after : Decimal
+  +operator_id : int
+  +occurred_at : datetime
+  +reason : str
+  +is_non_fefo : bool
+  +reverses_transaction_id : int | None
+}
+
+class "報廢紀錄\nWasteRecord" as WasteRecord <<entity>> #FFF7ED {
+  +id : int
+  +batch_id : int
+  +transaction_id : int
+  +quantity : Decimal
+  +reason : WasteReason
+  +note : str | None
+  +loss_amount : Decimal | None
+  +operator_id : int
+  +occurred_at : datetime
+}
+
+Employee "1" -- "0..*" InventoryTransaction : operator
+Employee "1" -- "0..*" WasteRecord : operator
+InventoryBatch "1" -- "0..*" InventoryTransaction : batch
+InventoryBatch "1" -- "0..*" WasteRecord : batch
+InventoryTransaction "0..1" -- "0..1" InventoryTransaction : reverses
+InventoryTransaction "1" -- "0..1" WasteRecord : transaction
+
+
+legend bottom left
+  報廢紀錄各對應一筆數量異動。
+  盤點差額使用 InventoryTransaction 記錄，
+  不新增盤點資料表或類別。
+  ─────────────────────
+  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
+  端點數字為原圖多重度；交叉處不代表關聯或分支
+  共用類別可出現在不同模組圖；屬性均完整保留
+endlegend
+@enduml

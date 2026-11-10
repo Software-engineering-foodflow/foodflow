@@ -1,0 +1,66 @@
+@startuml b-class-04-inventory-query
+title 食序 FoodFlow｜批次庫存查詢領域類別圖
+caption FR-08、FR-09｜局部視圖，完整關聯見原始總覽圖
+left to right direction
+hide circle
+skinparam linetype polyline
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft JhengHei
+skinparam defaultFontSize 14
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #64748B
+skinparam ArrowColor #475569
+skinparam ArrowFontSize 12
+skinparam nodesep 55
+skinparam ranksep 100
+skinparam padding 6
+skinparam dpi 120
+
+class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
+  +id : int
+  +name : str
+  +category_id : int
+  +unit : str
+  +storage_method : StorageType
+  +safety_stock_quantity : Decimal
+  +is_active : bool
+  +created_at : datetime
+}
+
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
+  +id : int
+  +batch_number : str
+  +source_item_id : int
+  +ingredient_id : int
+  +expiry_date : date
+  +received_date : date
+  +current_location_id : int
+  +unit_price : Decimal | None
+  +initial_quantity : Decimal
+  +remaining_quantity : Decimal
+}
+
+class "儲存位置\nStorageLocation" as StorageLocation <<entity>> #EFF6FF {
+  +id : int
+  +code : str
+  +name : str
+  +storage_type : StorageType
+  +description : str | None
+  +is_active : bool
+}
+
+Ingredient "1" -- "0..*" InventoryBatch : ingredient
+StorageLocation "1" -- "0..*" InventoryBatch : current_location
+
+
+legend bottom left
+  來源進貨明細的關聯見圖 3；
+  數量與位置歷程關聯見圖 8。
+  本圖為查詢使用的物件視圖，不新增資料關聯。
+  ─────────────────────
+  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
+  端點數字為原圖多重度；交叉處不代表關聯或分支
+  共用類別可出現在不同模組圖；屬性均完整保留
+endlegend
+@enduml
