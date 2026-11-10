@@ -1,0 +1,78 @@
+@startuml b-class-06-alerts
+title 食序 FoodFlow｜效期與低庫存預警領域類別圖
+caption FR-12～FR-14｜局部視圖，完整關聯見原始總覽圖
+left to right direction
+hide circle
+skinparam linetype polyline
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft JhengHei
+skinparam defaultFontSize 14
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #64748B
+skinparam ArrowColor #475569
+skinparam ArrowFontSize 12
+skinparam nodesep 55
+skinparam ranksep 100
+skinparam padding 6
+skinparam dpi 120
+
+class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
+  +id : int
+  +username : str
+  +password_hash : str
+  +name : str
+  +role : EmployeeRole
+  +is_active : bool
+  +token_version : int
+  +created_at : datetime
+}
+
+class "預警設定\nAlertSetting" as AlertSetting <<entity>> #F2EFF8 {
+  +id : int
+  +name : str
+  +warning_days : int
+  +created_at : datetime
+  +updated_at : datetime
+  +updated_by_id : int | None
+}
+
+class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
+  +id : int
+  +name : str
+  +category_id : int
+  +unit : str
+  +storage_method : StorageType
+  +safety_stock_quantity : Decimal
+  +is_active : bool
+  +created_at : datetime
+}
+
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
+  +id : int
+  +batch_number : str
+  +source_item_id : int
+  +ingredient_id : int
+  +expiry_date : date
+  +received_date : date
+  +current_location_id : int
+  +unit_price : Decimal | None
+  +initial_quantity : Decimal
+  +remaining_quantity : Decimal
+}
+
+Employee "0..1" -- "0..*" AlertSetting : updated_by
+Ingredient "1" -- "0..*" InventoryBatch : ingredient
+AlertSetting -[hidden]right-> Ingredient
+
+
+legend bottom left
+  預警由設定、食材安全庫存量與批次效期計算。
+  AlertSetting 與 Ingredient／InventoryBatch
+  沒有直接資料關聯，不以虛構連線表示計算依賴。
+  ─────────────────────
+  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
+  端點數字為原圖多重度；交叉處不代表關聯或分支
+  共用類別可出現在不同模組圖；屬性均完整保留
+endlegend
+@enduml

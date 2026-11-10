@@ -1,0 +1,42 @@
+@startuml b-class-01-auth
+title 食序 FoodFlow｜帳號與權限管理領域類別圖
+caption FR-01、FR-02｜局部視圖，完整關聯見原始總覽圖
+left to right direction
+hide circle
+skinparam linetype polyline
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft JhengHei
+skinparam defaultFontSize 14
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #64748B
+skinparam ArrowColor #475569
+skinparam ArrowFontSize 12
+skinparam nodesep 55
+skinparam ranksep 100
+skinparam padding 6
+skinparam dpi 120
+
+class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
+  +id : int
+  +username : str
+  +password_hash : str
+  +name : str
+  +role : EmployeeRole
+  +is_active : bool
+  +token_version : int
+  +created_at : datetime
+}
+
+
+
+legend bottom left
+  角色使用 Employee.role 表示，
+  本圖不新增角色或權限資料表。
+  員工的操作紀錄關聯於相關模組圖呈現。
+  ─────────────────────
+  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
+  端點數字為原圖多重度；交叉處不代表關聯或分支
+  共用類別可出現在不同模組圖；屬性均完整保留
+endlegend
+@enduml
