@@ -1,0 +1,160 @@
+@startuml b-sequence-fefo-issue
+title 食序 FoodFlow｜UC-11 FEFO 領用循序圖
+caption FR-10、FR-11｜含唯讀建議、確認領用與防重送；依目前程式實作
+hide footbox
+autonumber
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft JhengHei
+skinparam defaultFontSize 13
+skinparam dpi 120
+skinparam maxMessageSize 200
+skinparam sequenceMessageAlign center
+skinparam BoxPadding 8
+skinparam sequence {
+  ArrowColor #475569
+  LifeLineBorderColor #94A3B8
+  ParticipantBorderColor #64748B
+  ParticipantBackgroundColor #EFF6FF
+  ActorBorderColor #475569
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor #F8FAFC
+  GroupHeaderFontColor #334155
+}
+
+actor "操作人員\n一般員工／管理者" as User
+boundary "領用前端\nIssuesPage／hooks／api" as UI
+control "API／Controller\nissue.router＋錯誤處理" as API
+control "IssueService" as Service
+participant "IssueRepository\nSqlAlchemy 實作" as Repo
+participant "挑批次策略\nFefoStrategy／ManualStrategy" as Strategy
+participant "StockLedger\nSqlAlchemyStockLedger" as Ledger
+participant "UnitOfWork\nSqlAlchemyUnitOfWork" as UoW
+database "PostgreSQL" as DB
+
+note over UI, API
+  每次請求均經 get_current_employee；無效登入回 401。
+  Request Schema 驗證正數、精度與明細，失敗回 422，不呼叫業務方法。
+  「挑批次策略」生命線合併呈現兩個獨立、已注入的策略實例，非新增類別。
+end note
+== 階段一：取得 FEFO 建議（不鎖批次、不扣庫存） ==
+User -> UI : 選擇食材、輸入需求量，取得建議
+UI -> API : POST /api/v1/issues/suggestions\n{ingredient_id, quantity}
+API -> Service : suggest(ingredient_id, quantity=...)
+Service -> Repo : get_ingredient(ingredient_id)
+Repo -> DB : SELECT ingredient
+DB --> Repo : 食材及單位
+Repo --> Service : Ingredient
+Service -> Service : _require_whole()；Clock.today()
+Service -> Repo : remaining_batches(ingredient_id)
+Repo -> DB : SELECT remaining_quantity > 0 的批次\n載入目前位置（不使用 FOR UPDATE）
+DB --> Repo : 批次資料
+Repo --> Service : list[InventoryBatch]
+Service -> Service : _candidates()：排除過期批次（今日到期仍可用）
+Service -> Strategy : FefoStrategy.select(candidates, SelectionRequest(quantity))
+Strategy -> Strategy : order()：到期日 → 進貨日 → 批號 → 批次 id\n依剩餘量跨批次分配；可用量不足即拒絕
+Strategy --> Service : FEFO 配量基準
+Service -> Repo : warning_days()
+Repo -> DB : SELECT AlertSetting.warning_days
+DB --> Repo : 預警天數
+Repo --> Service : warning_days
+Service -> Service : FefoStrategy.order() 排列候選\n計算效期狀態及剩餘天數，組 Suggestion
+Service --> API : Suggestion
+API --> UI : HTTP 200 IssueSuggestionResponse
+UI --> User : 顯示建議配量、可用量、位置與效期
+opt 員工改選批次或數量
+  ref over UI, Strategy
+    再 POST /issues/suggestions，改傳 lines
+    _classify() 驗證批次；_allocate() 比較 ManualStrategy 與 FEFO 基準
+    回傳各候選 is_non_fefo；前端要求偏離建議的明細填原因
+  end ref
+end
+note over Service, DB
+  建議失敗（404／409／422）時回錯誤，不進入下列確認流程。
+  建議只是當下快照；確認時必須重新驗證，不能直接依舊建議扣庫存。
+end note
+
+== 階段二：確認領用（以目前批次餘量為準） ==
+User -> UI : 核對實際批次、數量及必要原因，確認領用
+UI -> API : POST /api/v1/issues\n{ingredient_id, lines}＋Idempotency-Key: UUID
+note over UI, API
+  同內容失敗重試沿用 key；內容變更或成功後才 rotate()。
+  get_idempotency_key 驗證 UUID；首次及重放成功都回 HTTP 200。
+end note
+API -> Service : issue(ingredient_id, lines, idempotency_key, operator_id)
+Service -> UoW : transaction()：進入業務交易區塊
+Service -> Ledger : lock_ingredient_batches(ingredient_id)
+Ledger -> DB : SELECT 該食材 remaining_quantity > 0 的全部批次\nORDER BY id FOR UPDATE，重新讀取最新欄位
+DB --> Ledger : 已鎖定批次
+Ledger --> Service : locked batches
+Service -> Ledger : find_operation(key, TransactionType.ISSUE)
+Ledger -> DB : SELECT operation_group_id = key AND type = ISSUE
+DB --> Ledger : 既有異動或空集合
+Ledger --> Service : existing
+Service -> Service : check_replay(existing, {batch_id: quantity})
+
+alt key 與批次配量相同：重放成功
+  Service -> Repo : _result() 內 get_batches(batch_ids)
+  Repo -> DB : 查批號
+  DB --> Repo : 批次資料
+  Repo --> Service : 批號對照
+  Service -> Service : 由既有異動的 quantity_after 等欄位重建原結果
+  Service -> UoW : 正常離開 transaction()
+  UoW -> DB : Session.commit()，釋放列鎖（不新增扣量）
+  Service --> API : 原 IssueResult
+  API --> UI : HTTP 200，回原始領用結果
+  UI -> UI : invalidateStockQueries()；成功後 rotate()
+  UI --> User : 顯示原領用結果，不重複扣庫存
+else key 相同但批次或配量不同
+  Service -> UoW : check_replay 丟 DomainError；例外離開
+  UoW -> DB : Session.rollback()，釋放列鎖
+  Service --> API : DUPLICATE
+  API --> UI : HTTP 409 DUPLICATE
+  UI --> User : 顯示錯誤；本次不扣庫存
+else 新 key，且後續驗證與寫入全部成功
+  Service -> Repo : get_ingredient(ingredient_id)
+  Repo -> DB : SELECT ingredient
+  DB --> Repo : 食材與單位
+  Repo --> Service : Ingredient
+  Service -> Service : _require_whole()；Clock.today()\n_classify() 依序分類不存在／跨食材、過期錯誤
+  opt 提交批次不在已鎖定集合內
+    Service -> Repo : get_batches(missing_ids)
+    Repo -> DB : SELECT 批次（補充辨識用，不新增批次鎖）
+    DB --> Repo : 查到的批次
+    Repo --> Service : 批次資料；不存在／跨食材 404，過期 422
+  end
+  Service -> Strategy : ManualStrategy.select(candidates, SelectionRequest(total, lines))
+  Strategy --> Service : chosen（逐批檢查餘量，不足即 409）
+  Service -> Strategy : FefoStrategy.select(candidates, SelectionRequest(total))
+  Strategy --> Service : 鎖內重新計算的 FEFO baseline
+  Service -> Service : chosen > baseline 標記非 FEFO\n缺原因即 422；Clock.now()
+  loop 每筆領用明細：同一交易內完成
+    Service -> Ledger : deduct(batch, quantity, ISSUE, StockOp(key, operator, time, reason), is_non_fefo)
+    Ledger -> Ledger : 驗證已鎖批次；apply_quantity_change(-quantity)
+    Ledger -> DB : UPDATE 批次餘量；INSERT ISSUE 異動；flush
+    DB --> Ledger : 寫入結果（尚未 commit）
+    Ledger --> Service : InventoryTransaction
+  end
+  Service -> Repo : _result() 內 get_batches(batch_ids)
+  Repo -> DB : 查批號
+  DB --> Repo : 批次資料
+  Repo --> Service : 批號對照
+  Service -> Service : 以本次異動的 quantity_after 等欄位組 IssueResult
+  Service -> UoW : 正常離開 transaction()
+  UoW -> DB : Session.commit()，所有批次一起生效
+  Service --> API : IssueResult
+  API --> UI : HTTP 200 IssueResponse
+  UI -> UI : invalidateStockQueries()；清空表單並 rotate()
+  UI --> User : 顯示領用成功及各批次扣量結果
+else 新操作任一步驟失敗：在發生處中止，不再執行成功分支剩餘呼叫
+  Service -> UoW : 驗證或寫入例外離開 transaction()
+  UoW -> DB : Session.rollback()，本次多批次全部不生效
+  Service --> API : DomainError／未預期例外
+  API --> UI : HTTP 404／409／422／500 統一錯誤回應
+  UI --> User : 顯示錯誤與最新可用量（超量時）／欄位錯誤
+end
+note over Service, DB
+  順序依實作：鎖批次 → 防重送 → 批次與單位驗證 → Manual／FEFO 比較 → 原因檢查 → 扣量。
+  StockLedger 只 flush；UnitOfWork 負責 commit／rollback；查詢不會觸發 Email 或背景通知。
+end note
+@enduml
