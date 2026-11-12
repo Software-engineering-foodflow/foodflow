@@ -4,9 +4,19 @@ title 食序 FoodFlow｜全系統泳道圖（八大模組）
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
-skinparam defaultFontSize 14
+skinparam defaultFontSize 20
+skinparam titleFontSize 28
+skinparam captionFontSize 18
+skinparam legendFontSize 18
+skinparam noteFontSize 18
+skinparam noteFontColor #1F2937
+skinparam ArrowFontSize 18
+skinparam swimlaneTitleFontSize 22
+skinparam swimlaneTitleFontStyle bold
 skinparam ArrowColor #52665F
 skinparam activity {
+  FontSize 20
+  DiamondFontSize 18
   BackgroundColor #F5F9F6
   BorderColor #52665F
   FontColor #20372C
@@ -19,7 +29,7 @@ skinparam swimlaneBorderColor #94A59C
 skinparam swimlaneTitleBackgroundColor #EAF3ED
 skinparam noteBackgroundColor #FFFBEA
 skinparam noteBorderColor #B7A46C
-skinparam dpi 110
+skinparam dpi 144
 |操作人員（共用作業）|
 |FoodFlow 系統|
 |管理者（專屬作業）|
