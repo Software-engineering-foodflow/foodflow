@@ -1,0 +1,80 @@
+@startuml d-software-architecture
+title 食序 FoodFlow｜軟體架構圖
+caption 單一門市 Web 系統・模組化單體・依目前實作整理
+
+top to bottom direction
+skinparam linetype ortho
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Microsoft JhengHei
+skinparam defaultFontSize 18
+skinparam titleFontSize 28
+skinparam captionFontSize 17
+skinparam ArrowFontSize 16
+skinparam ArrowColor #475569
+skinparam defaultFontColor #1F2937
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam roundcorner 8
+skinparam nodesep 45
+skinparam ranksep 55
+skinparam padding 10
+skinparam dpi 144
+skinparam rectangleBorderColor #64748B
+skinparam componentBorderColor #64748B
+skinparam databaseBorderColor #64748B
+
+actor "餐廳操作人員\n管理者／一般員工" as User
+
+rectangle "前端客戶端層（電腦／平板瀏覽器）" as Frontend #EAF3ED {
+  component "<b>React＋TypeScript＋Vite／Mantine</b>\n頁面與表單 → TanStack Query hooks → feature API\nshared/api/client.ts 統一請求及錯誤處理" as Web #FFFFFF
+}
+
+rectangle "FastAPI 後端應用（單一應用、依功能模組分層）" as Backend #F5F8FC {
+  component "<b>API 入口與安全控管</b>\n/api/v1・router.py／Pydantic schemas\nJWT Cookie 驗證・角色權限（RBAC）\n統一錯誤回應（DomainError／驗證錯誤）" as Api #E8EFF9
+
+  component "<b>Service 商業邏輯層</b>\n帳號權限｜基本資料與儲存位置\n進貨與批次｜批次庫存查詢\n食材領用｜效期與低庫存預警\n報廢與盤點｜異動紀錄與統計" as Service #EAF3ED
+
+  component "<b>領域規則與策略</b>\nFefoStrategy／ManualStrategy\nAlertRuleFactory／AlertRule\n共用效期與低庫存判定" as Domain #FFF7E8
+
+  component "<b>站內預警 Adapter</b>\nAlertNotifier → InAppNotifier\n同步回傳 AlertResult 供首頁顯示" as Notifier #FFF7E8
+
+  rectangle "共用支援（相依注入）" as Shared #F2EFF8 {
+    component "<b>Clock</b>\nSystemClock／FixedClock\n統一時間與臺灣時區日期" as Clock #FFFFFF
+    component "<b>UnitOfWork</b>\nSqlAlchemyUnitOfWork\n整筆交易成功提交、例外回滾" as Uow #FFFFFF
+  }
+
+  component "<b>StockLedger</b>\nSqlAlchemyStockLedger\n批次列鎖、餘量與位置寫入\n進貨、領用、報廢、盤點及沖銷異動" as Ledger #EAF3ED
+
+  component "<b>Repository</b>\n各模組介面＋SQLAlchemy 實作\n基本資料／單據查詢與維護\n批次查詢、預警資料與統計" as Repo #E8EFF9
+
+  component "<b>SQLAlchemy Session／ORM</b>\n共用資料庫連線與模型\n資料存取 flush；交易交由 UnitOfWork 管理" as Session #FFFFFF
+
+  Api -down-> Service : 驗證後呼叫
+  Service -left-> Domain : 策略／規則計算
+  Service -left-> Notifier : 站內預警結果
+  Service -right..> Clock : 取得時間
+  Service -right-> Uow : 定義交易範圍
+  Service -down-> Ledger : 庫存寫入
+  Service -down-> Repo : 資料查詢／維護
+  Ledger -down-> Session : 列鎖與寫入／flush
+  Repo -down-> Session : 查詢與寫入／flush
+  Uow -down-> Session : commit／rollback
+
+  Domain -[hidden]down-> Notifier
+  Clock -[hidden]down-> Uow
+  Ledger -[hidden]right-> Repo
+}
+
+database "<b>PostgreSQL 17</b>\n12 張資料表・PK／FK／唯一及檢查限制\n批次、單據、庫存異動、位置及報廢紀錄\nDocker Compose＋持久化 Volume" as Db #EAF3ED
+
+User -down-> Web : 使用瀏覽器操作
+Web -down-> Api : 同源 HTTP／JSON・/api/v1\nJWT 以 HttpOnly Cookie 傳遞
+Session -down-> Db : psycopg／SQL
+
+legend bottom left
+  實線：呼叫或資料存取；虛線：共用支援依賴；隱藏線僅用於排版。
+  開發：Vite 代理 /api；展示：FastAPI 提供前端靜態檔。
+  預警於查詢時計算，InAppNotifier 不發送外部訊息。
+endlegend
+@enduml

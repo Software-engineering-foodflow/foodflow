@@ -6,12 +6,22 @@ autonumber
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
-skinparam defaultFontSize 13
-skinparam dpi 120
-skinparam maxMessageSize 200
+skinparam defaultFontSize 18
+skinparam titleFontSize 26
+skinparam captionFontSize 18
+skinparam noteFontSize 18
+skinparam noteFontColor #1F2937
+skinparam dpi 144
+skinparam maxMessageSize 300
 skinparam sequenceMessageAlign center
 skinparam BoxPadding 8
 skinparam sequence {
+  ArrowFontSize 18
+  ParticipantFontSize 18
+  ParticipantFontStyle bold
+  ActorFontSize 18
+  GroupFontSize 18
+  GroupHeaderFontSize 18
   ArrowColor #475569
   LifeLineBorderColor #94A3B8
   ParticipantBorderColor #64748B
