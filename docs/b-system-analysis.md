@@ -9,7 +9,7 @@ updated: 2026-11-13
 
 ## 一、使用案例圖
 
-![圖 1 食序 FoodFlow 使用案例圖](diagrams/b-use-case-final.png)
+![圖 1 食序 FoodFlow 使用案例圖](diagrams/b-use-case-no-generalization.png)
 
 圖 1　食序 FoodFlow 使用案例圖
 
