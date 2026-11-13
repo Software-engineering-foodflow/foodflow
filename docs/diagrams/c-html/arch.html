@@ -1,0 +1,80 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><script src="common.js"></script>
+<style>#canvas{width:1500px;height:1395px} .c-back>.stereo,.c-db>.stereo,.c-front>.stereo{text-align:right;padding-right:22px}</style></head><body>
+<div id="canvas">
+<div class="title" data-g="x">食序 FoodFlow 系統架構圖</div>
+
+<!-- 使用者層 -->
+<div class="pkg c-user" data-g="front" style="left:330px;top:105px;width:840px;height:110px"><div class="tab">使用者層</div><div class="stereo">«單一門市・電腦／平板瀏覽器»</div></div>
+<div class="box" id="ua" data-g="front" style="left:400px;top:140px;width:300px"><b>管理者</b>店長：資料、權限、報表</div>
+<div class="box" id="ub" data-g="front" style="left:800px;top:140px;width:300px"><b>一般員工</b>收貨、廚房備料：進貨、領用、報廢</div>
+
+<!-- 前端層 -->
+<div class="pkg c-front" data-g="front" style="left:40px;top:275px;width:1420px;height:205px"><div class="tab">前端層</div><div class="stereo">«React 單頁應用（SPA）・TypeScript・Vite・Mantine»</div></div>
+<div class="box b-blue" id="fp" data-g="front" style="left:80px;top:325px;width:260px"><b>頁面與元件</b><code>features/*/pages</code><br><small>表單、表格、預警首頁</small></div>
+<div class="box b-blue" id="fh" data-g="front" style="left:420px;top:325px;width:260px"><b>資料 Hooks</b><code>features/*/hooks.ts</code><br><small>TanStack Query 快取與失效</small></div>
+<div class="box b-blue" id="fa" data-g="front" style="left:760px;top:325px;width:260px"><b>API 函式</b><code>features/*/api.ts</code><br><small>型別由 OpenAPI 產生</small></div>
+<div class="box b-blue" id="fc" data-g="front" style="left:1100px;top:325px;width:320px"><b>HTTP 用戶端</b><code>shared/api/client.ts</code><br><small>唯一的 fetch・錯誤格式・401 導回登入</small></div>
+<div class="box b-blue" id="fu" data-g="front" style="left:80px;top:420px;width:940px;padding:6px 10px"><small><b style="display:inline;font-size:14px">共用介面</b>　<code>shared/ui</code>（PageHeader、DataTable、StatusBadge…）＋ <code>app/theme.ts</code> 設計系統</small></div>
+
+<!-- 後端 -->
+<div class="pkg c-back" data-g="x" style="left:40px;top:575px;width:1420px;height:530px"><div class="tab">後端應用層</div><div class="stereo">«FastAPI 單一應用・依八大功能分 10 個模組・API → Service → Repository»</div></div>
+<div class="box b-yel" id="auth" data-g="api" style="left:80px;top:625px;width:330px"><b>身分驗證與權限</b><code>auth/dependencies.py</code><br>JWT（HttpOnly Cookie）・角色 RBAC</div>
+<div class="box b-yel" id="api" data-g="api" style="left:530px;top:625px;width:440px"><b>API 層（Controller）</b><code>router.py</code>・<code>schemas.py</code><br>Pydantic 驗證輸入・組成回應</div>
+<div class="box b-yel" id="err" data-g="api" style="left:1090px;top:625px;width:330px"><b>統一錯誤處理</b><code>app/main.py</code> exception handler<br>DomainError／驗證錯誤 → HTTP 錯誤格式</div>
+
+<div class="box b-pur" id="sup" data-g="service" style="left:80px;top:775px;width:330px"><b>共用支援</b><code>Clock</code>：SystemClock／FixedClock<br><code>UnitOfWork</code>：一筆交易 commit／rollback<br><code>dependencies.py</code>：建構子注入組裝</div>
+<div class="box b-yel" id="svc" data-g="service" style="left:530px;top:775px;width:440px"><b>Service 層（業務邏輯）</b><code>service.py</code><br>商業規則・交易範圍・列鎖順序<br>Idempotency-Key／單據狀態機防重送</div>
+<div class="box b-org" id="dom" data-g="domain" style="left:1090px;top:745px;width:330px"><b>領域規則與策略</b>FefoStrategy／ManualStrategy<br>AlertRuleFactory → 4 條 AlertRule<br><code>classify_expiry</code>・<code>is_low_stock</code></div>
+<div class="box b-org" id="ntf" data-g="adapter" style="left:1090px;top:885px;width:330px"><b>站內預警 Adapter</b>AlertNotifier → InAppNotifier<br><small>以 API 回應投遞，不對外連線</small></div>
+
+<div class="box b-grn" id="led" data-g="data" style="left:330px;top:965px;width:400px"><b>StockLedger（庫存唯一寫入入口）</b><code>inventory/ledger.py</code><br>批次列鎖・餘量・位置・異動紀錄</div>
+<div class="box b-grn" id="repo" data-g="data" style="left:790px;top:965px;width:300px"><b>Repository</b><code>repository.py</code> 介面<br>＋ SQLAlchemy 實作</div>
+
+<!-- 資料庫層 -->
+<div class="pkg c-db" data-g="db" style="left:40px;top:1170px;width:1420px;height:150px"><div class="tab">資料庫層</div><div class="stereo">«Docker Compose・持久化 Volume»</div></div>
+<div class="box b-red" id="pg" data-g="db" style="left:530px;top:1205px;width:440px"><b>PostgreSQL 17（主資料庫）</b>12 張表・PK／FK／唯一與檢查限制<br>批次、單據、庫存異動、報廢紀錄</div>
+<div class="box b-red" id="alm" data-g="db" style="left:80px;top:1215px;width:330px"><b>Alembic</b>migration 管理 schema 版本</div>
+<div class="box b-red" id="bak" data-g="db" style="left:1090px;top:1215px;width:330px"><b>備份與還原</b><code>backup.sh</code>・<code>restore.sh</code>（pg_dump）</div>
+
+<div class="note" data-g="x" style="left:40px;top:1340px;width:1420px;text-align:center">部署：開發時 Vite 將 <code class="mono">/api</code> 代理到後端；展示時由 FastAPI 一併提供前端靜態檔，兩者都同源。預警在查詢時即時計算，首版沒有背景工作與訊息佇列。</div>
+</div>
+<script>
+drawEdges([
+ ['ua','fp',{ts:'t',to:-60,mid:248,cls:'front'}],
+ ['ub','fp',{ts:'t',to:40,mid:248,cls:'front'}],
+ ['fp','fh',{fs:'r',ts:'l',cls:'front'}],
+ ['fh','fa',{fs:'r',ts:'l',cls:'front'}],
+ ['fa','fc',{fs:'r',ts:'l',cls:'front'}],
+ ['fc','api',{mid:530,label:'同源 HTTP／JSON　<code>/api/v1</code>',lx:930,ly:530,cls:'front api'}],
+ ['api','auth',{fs:'l',ts:'r',label:'驗證身分',anchor:'c',lx:470,ly:640,cls:'api'}],
+ ['api','err',{fs:'r',ts:'l',label:'例外轉換',anchor:'c',lx:1030,ly:640,cls:'api'}],
+ ['api','svc',{label:'呼叫業務方法',lx:760,cls:'api service'}],
+ ['svc','sup',{fs:'l',ts:'r',dash:1,straightY:1,label:'時間・交易',anchor:'c',lx:470,ly:810,cls:'service'}],
+ ['svc','dom',{fs:'r',ts:'l',label:'挑批次・評估規則',anchor:'c',lx:1030,ly:788,fo:-30,straightY:1,cls:'service domain'}],
+ ['svc','ntf',{fs:'r',ts:'l',label:'投遞預警',anchor:'c',lx:1030,ly:905,fo:25,mid:1050,cls:'service adapter'}],
+ ['svc','led',{fo:-110,label:'庫存變更',lx:430,ly:935,mid:930,cls:'service data'}],
+ ['svc','repo',{fo:110,label:'查詢／維護',lx:950,ly:935,mid:930,cls:'service data'}],
+ ['led','pg',{to:-110,mid:1150,label:'列鎖・寫入',lx:540,ly:1105,cls:'data db'}],
+ ['repo','pg',{to:110,mid:1150,label:'SQL 查詢',lx:950,ly:1105,cls:'data db'}],
+ ['alm','pg',{fs:'r',ts:'l',dash:1,straightY:1,cls:'db'}],
+ ['bak','pg',{fs:'l',ts:'r',dash:1,straightY:1,cls:'db'}],
+]);
+const hl = new URLSearchParams(location.search).get('hl');
+if (hl) {
+  document.body.classList.add('hl');
+  const groups = hl.split(',');
+  const els = [...document.querySelectorAll('[data-g]')].filter(e => groups.includes(e.dataset.g));
+  els.forEach(e => e.classList.add('on'));
+  groups.forEach(g => document.querySelectorAll('.'+g).forEach(e => e.classList.add('on')));
+  const boxes = els.filter(e => e.classList.contains('box'));
+  const rb = document.getElementById('canvas').getBoundingClientRect();
+  let x1=1e9,y1=1e9,x2=0,y2=0;
+  boxes.forEach(e=>{const b=e.getBoundingClientRect();x1=Math.min(x1,b.left);y1=Math.min(y1,b.top);x2=Math.max(x2,b.right);y2=Math.max(y2,b.bottom);});
+  const f=document.createElement('div');f.className='hlframe';
+  Object.assign(f.style,{left:(x1-rb.left-14)+'px',top:(y1-rb.top-14)+'px',width:(x2-x1+28)+'px',height:(y2-y1+28)+'px'});
+  document.getElementById('canvas').appendChild(f);
+  const t=document.createElement('div');t.className='hltag';t.textContent=new URLSearchParams(location.search).get('tag')||'';
+  Object.assign(t.style,{left:(x1-rb.left-14)+'px',top:(y2-rb.top+18)+'px'});
+  if(t.textContent) document.getElementById('canvas').appendChild(t);
+}
+</script></body></html>

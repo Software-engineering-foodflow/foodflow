@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css"><script src="common.js"></script>
+<style>#canvas{width:1500px;height:430px}
+.ic{position:absolute;text-align:center;font-weight:700;font-size:19px;color:#374151}
+.ic svg{display:block;margin:0 auto 10px}
+.chip{position:absolute;display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:#374151}
+.chip span.d{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800}
+.frame{position:absolute;left:330px;top:150px;width:1140px;height:250px;border:2px solid #9ca3af;border-radius:12px;background:#fafafa}
+.sub{font-weight:400;font-size:14.5px;color:#4b5563;display:block;margin-top:3px}
+</style></head><body>
+<div id="canvas">
+<div class="chip" style="left:520px;top:30px"><span class="d" style="background:#4a8fc9">R</span>前端 React + TypeScript</div>
+<div class="chip" style="left:860px;top:30px"><span class="d" style="background:#0f9488">F</span>FastAPI 應用伺服器</div>
+<div class="chip" style="left:1180px;top:30px"><span class="d" style="background:#336791">PG</span>PostgreSQL 17</div>
+<div class="chip" style="left:520px;top:85px;font-weight:400;font-size:14px;color:#6b7280">Mantine・TanStack Query</div>
+<div class="chip" style="left:860px;top:85px;font-weight:400;font-size:14px;color:#6b7280">SQLAlchemy 2・Alembic・Pydantic</div>
+<div class="chip" style="left:1180px;top:85px;font-weight:400;font-size:14px;color:#6b7280">Docker Compose</div>
+<div class="frame"></div>
+
+<div class="ic" id="u" style="left:40px;top:180px;width:230px">
+<svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="53" fill="#dbeafe"/><circle cx="55" cy="42" r="19" fill="#4a8fc9"/><path d="M20 92 C24 66 86 66 90 92 Z" fill="#4a8fc9"/></svg>
+使用者<span class="sub">管理者・一般員工</span></div>
+
+<div class="ic" id="b" style="left:420px;top:180px;width:250px">
+<svg width="150" height="110" viewBox="0 0 150 110"><rect x="10" y="8" width="104" height="72" rx="6" fill="#334155"/><rect x="16" y="14" width="92" height="60" fill="#e0f2fe"/><rect x="22" y="20" width="36" height="8" rx="2" fill="#4a8fc9"/><rect x="22" y="34" width="80" height="6" rx="2" fill="#93c5fd"/><rect x="22" y="45" width="80" height="6" rx="2" fill="#93c5fd"/><rect x="22" y="56" width="50" height="6" rx="2" fill="#f59e0b"/><rect x="0" y="80" width="124" height="8" rx="3" fill="#64748b"/><rect x="100" y="40" width="44" height="64" rx="6" fill="#1f2937"/><rect x="104" y="46" width="36" height="52" fill="#dcfce7"/><rect x="108" y="52" width="28" height="6" rx="2" fill="#16a34a"/><rect x="108" y="63" width="28" height="5" rx="2" fill="#86efac"/><rect x="108" y="73" width="28" height="5" rx="2" fill="#86efac"/></svg>
+系統（瀏覽器）<span class="sub">電腦・平板，1024×768 以上</span></div>
+
+<div class="ic" id="s" style="left:820px;top:180px;width:250px">
+<svg width="110" height="110" viewBox="0 0 110 110"><rect x="22" y="6" width="66" height="98" rx="6" fill="#0f766e"/><rect x="30" y="16" width="50" height="16" rx="3" fill="#14b8a6"/><rect x="30" y="40" width="50" height="16" rx="3" fill="#14b8a6"/><rect x="30" y="64" width="50" height="16" rx="3" fill="#14b8a6"/><circle cx="72" cy="24" r="3" fill="#ecfeff"/><circle cx="72" cy="48" r="3" fill="#ecfeff"/><circle cx="72" cy="72" r="3" fill="#fde047"/></svg>
+本地伺服器<span class="sub">FastAPI・/api/v1・同源</span></div>
+
+<div class="ic" id="d" style="left:1190px;top:180px;width:250px">
+<svg width="110" height="110" viewBox="0 0 110 110"><ellipse cx="55" cy="18" rx="38" ry="12" fill="#5b8ec4"/><path d="M17 18 V88 A38 12 0 0 0 93 88 V18 A38 12 0 0 1 17 18 Z" fill="#336791"/><path d="M17 42 A38 12 0 0 0 93 42 M17 65 A38 12 0 0 0 93 65" stroke="#9cc0e6" stroke-width="3" fill="none"/></svg>
+資料庫<span class="sub">PostgreSQL・12 張表</span></div>
+</div>
+<script>
+drawEdges([['u','b',{fs:'r',ts:'l',both:1,fo:-30,to:-30}],['b','s',{fs:'r',ts:'l',both:1,fo:-30,to:-30}],['s','d',{fs:'r',ts:'l',both:1,fo:-30,to:-30}]]);
+</script></body></html>

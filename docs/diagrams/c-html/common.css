@@ -1,0 +1,32 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #fff; font-family: "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif; color: #1f2933; }
+#canvas { position: relative; background: #fff; }
+.pkg { position: absolute; border: 2px solid; border-radius: 10px; }
+.pkg > .tab { position: absolute; left: -2px; top: -32px; height: 32px; padding: 4px 14px; font-weight: 700; font-size: 17px; border: 2px solid; border-bottom: none; border-radius: 8px 8px 0 0; }
+.pkg > .stereo { position: absolute; width: 100%; text-align: center; top: 6px; font-size: 14px; font-style: italic; color: #4b5563; }
+.box { position: absolute; background: #fff; border: 1.6px solid #6b7280; border-radius: 8px; padding: 9px 10px; text-align: center; font-size: 14.5px; line-height: 1.45; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.box b { font-size: 16px; display: block; margin-bottom: 2px; }
+.box code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 13px; }
+.box small { color: #4b5563; font-size: 13px; }
+.elabel { position: absolute; font-size: 13.5px; color: #374151; background: rgba(255,255,255,.92); padding: 1px 5px; border-radius: 4px; white-space: nowrap; line-height: 1.35; }
+.title { position: absolute; left: 0; width: 100%; text-align: center; font-weight: 700; font-size: 26px; top: 18px; }
+.note { position: absolute; background: #fffbe6; border: 1.4px solid #c9b25a; font-size: 13.5px; line-height: 1.5; padding: 8px 12px; border-radius: 4px; }
+/* 色區 */
+.c-user { background: #f3f4f6; border-color: #9ca3af; } .c-user > .tab { background: #e5e7eb; border-color: #9ca3af; }
+.c-front { background: #dcecf9; border-color: #4a8fc9; } .c-front > .tab { background: #b9d7f0; border-color: #4a8fc9; }
+.c-back { background: #fdf6d8; border-color: #c8a93a; } .c-back > .tab { background: #f6e7a6; border-color: #c8a93a; }
+.c-db { background: #f9dede; border-color: #c95b5b; } .c-db > .tab { background: #f0b9b9; border-color: #c95b5b; }
+.c-core { background: #ece6f7; border-color: #8a72c0; } .c-core > .tab { background: #d8ccef; border-color: #8a72c0; }
+.c-green { background: #e3f3e7; border-color: #4f9a62; } .c-green > .tab { background: #c3e5cb; border-color: #4f9a62; }
+.b-blue { background: #eef6fd; border-color: #4a8fc9; }
+.b-yel { background: #fffdf3; border-color: #b79a2f; }
+.b-pur { background: #f6f2fc; border-color: #8a72c0; }
+.b-grn { background: #eef8f0; border-color: #4f9a62; }
+.b-red { background: #fff4f4; border-color: #c95b5b; }
+.b-org { background: #fff3e6; border-color: #d0883a; }
+/* 標示模式 */
+body.hl .pkg, body.hl .box, body.hl .note, body.hl svg > path, body.hl .elabel { opacity: .22; filter: grayscale(.7); }
+body.hl .on { opacity: 1 !important; filter: none !important; }
+body.hl .box.on { box-shadow: 0 0 0 4px #e8590c, 0 2px 6px rgba(0,0,0,.25); }
+.hlframe { position: absolute; border: 3.5px dashed #e8590c; border-radius: 14px; pointer-events: none; }
+.hltag { position: absolute; background: #e8590c; color: #fff; font-weight: 700; font-size: 16px; padding: 3px 12px; border-radius: 6px; }
