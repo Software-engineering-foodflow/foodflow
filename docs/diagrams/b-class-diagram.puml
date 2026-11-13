@@ -1,79 +1,86 @@
 @startuml b-class-diagram
-title 食序 FoodFlow｜領域類別圖
-' Presentation-only candidate: 12 original classes, 94 members, 20 relationships.
-' Two tiers prioritize landscape proportions and short links between core classes.
-' together + hidden links constrain layout; norank changes layout only.
-' Crossings are not junctions; every association retains its two endpoint multiplicities.
+title FoodFlow｜整合類別圖（屬性與核心方法）
 top to bottom direction
-hide circle
-skinparam linetype ortho
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
-skinparam defaultFontSize 13
+skinparam defaultFontSize 14
 skinparam classAttributeIconSize 0
-skinparam classBorderColor #64748B
-skinparam classBackgroundColor #FFFFFF
-skinparam ArrowColor #475569
-skinparam ArrowFontSize 11
-skinparam nodesep 120
-skinparam ranksep 140
-skinparam padding 5
-skinparam roundcorner 0
-skinparam dpi 110
+skinparam classBackgroundColor white
+skinparam classHeaderBackgroundColor #ECECEC
+skinparam classBorderColor #777777
+skinparam linetype polyline
+skinparam dpi 144
 together {
-  class "供應商\nSupplier" as Supplier <<entity>> #EFF6FF {
-    +id : int
-    +name : str
-    +contact_person : str | None
-    +phone : str | None
-    +other_contact : str | None
-    +is_active : bool
-  }
-  class "食材分類\nIngredientCategory" as IngredientCategory <<entity>> #EFF6FF {
-    +id : int
-    +code : str
-    +name : str
-    +description : str | None
-    +is_active : bool
-    +created_at : datetime
-  }
-  class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
-    +id : int
-    +name : str
-    +category_id : int
-    +unit : str
-    +storage_method : StorageType
-    +safety_stock_quantity : Decimal
-    +is_active : bool
-    +created_at : datetime
-  }
-  class "儲存位置\nStorageLocation" as StorageLocation <<entity>> #EFF6FF {
-    +id : int
-    +code : str
-    +name : str
-    +storage_type : StorageType
-    +description : str | None
-    +is_active : bool
-  }
-  class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
-    +id : int
-    +username : str
-    +password_hash : str
-    +name : str
-    +role : EmployeeRole
-    +is_active : bool
-    +token_version : int
-    +created_at : datetime
-  }
-  class "預警設定\nAlertSetting" as AlertSetting <<entity>> #F2EFF8 {
-    +id : int
-    +name : str
-    +warning_days : int
-    +created_at : datetime
-    +updated_at : datetime
-    +updated_by_id : int | None
-  }
+class "供應商\nSupplier" as Supplier <<entity>> {
+  +id : int
+  +name : str
+  +contact_person : str | None
+  +phone : str | None
+  +other_contact : str | None
+  +is_active : bool
+  -- 方法 --
+
+}
+
+class "食材分類\nIngredientCategory" as IngredientCategory <<entity>> {
+  +id : int
+  +code : str
+  +name : str
+  +description : str | None
+  +is_active : bool
+  +created_at : datetime
+  -- 方法 --
+
+}
+
+class "食材\nIngredient" as Ingredient <<entity>> {
+  +id : int
+  +name : str
+  +category_id : int
+  +unit : str
+  +storage_method : StorageType
+  +safety_stock_quantity : Decimal
+  +is_active : bool
+  +created_at : datetime
+  -- 方法 --
+
+}
+
+class "儲存位置\nStorageLocation" as StorageLocation <<entity>> {
+  +id : int
+  +code : str
+  +name : str
+  +storage_type : StorageType
+  +description : str | None
+  +is_active : bool
+  -- 方法 --
+
+}
+
+class "員工\nEmployee" as Employee <<entity>> {
+  +id : int
+  +username : str
+  +password_hash : str
+  +name : str
+  +role : EmployeeRole
+  +is_active : bool
+  +token_version : int
+  +created_at : datetime
+  -- 方法 --
+
+}
+
+class "預警設定\nAlertSetting" as AlertSetting <<entity>> {
+  +id : int
+  +name : str
+  +warning_days : int
+  +created_at : datetime
+  +updated_at : datetime
+  +updated_by_id : int | None
+  -- 方法 --
+
+}
 }
 Supplier -[hidden]right-> IngredientCategory
 IngredientCategory -[hidden]right-> Ingredient
@@ -81,72 +88,89 @@ Ingredient -[hidden]right-> StorageLocation
 StorageLocation -[hidden]right-> Employee
 Employee -[hidden]right-> AlertSetting
 together {
-  class "進貨單\nGoodsReceipt" as GoodsReceipt <<entity>> #ECFDF5 {
-    +id : int
-    +supplier_id : int
-    +receipt_date : date
-    +status : GoodsReceiptStatus
-    +created_by_id : int
-    +created_at : datetime
-    +confirmed_at : datetime | None
-    +/receipt_number : str <<property, readOnly>>
-  }
-  class "進貨明細\nGoodsReceiptItem" as GoodsReceiptItem <<entity>> #ECFDF5 {
-    +id : int
-    +receipt_id : int
-    +ingredient_id : int
-    +quantity : Decimal | None
-    +unit_price : Decimal | None
-    +expiry_date : date | None
-    +location_id : int | None
-    +note : str | None
-  }
-  class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
-    +id : int
-    +batch_number : str
-    +source_item_id : int
-    +ingredient_id : int
-    +expiry_date : date
-    +received_date : date
-    +current_location_id : int
-    +unit_price : Decimal | None
-    +initial_quantity : Decimal
-    +remaining_quantity : Decimal
-  }
-  class "庫存異動\nInventoryTransaction" as InventoryTransaction <<entity>> #FFF7ED {
-    +id : int
-    +operation_group_id : UUID
-    +batch_id : int
-    +type : TransactionType
-    +quantity_delta : Decimal
-    +quantity_before : Decimal
-    +quantity_after : Decimal
-    +operator_id : int
-    +occurred_at : datetime
-    +reason : str
-    +is_non_fefo : bool
-    +reverses_transaction_id : int | None
-  }
-  class "報廢紀錄\nWasteRecord" as WasteRecord <<entity>> #FFF7ED {
-    +id : int
-    +batch_id : int
-    +transaction_id : int
-    +quantity : Decimal
-    +reason : WasteReason
-    +note : str | None
-    +loss_amount : Decimal | None
-    +operator_id : int
-    +occurred_at : datetime
-  }
-  class "位置變更紀錄\nBatchLocationChange" as BatchLocationChange <<entity>> #FFF7ED {
-    +id : int
-    +batch_id : int
-    +from_location_id : int
-    +to_location_id : int
-    +operator_id : int
-    +occurred_at : datetime
-    +reason : str
-  }
+class "進貨單\nGoodsReceipt" as GoodsReceipt <<entity>> {
+  +id : int
+  +supplier_id : int
+  +receipt_date : date
+  +status : GoodsReceiptStatus
+  +created_by_id : int
+  +created_at : datetime
+  +confirmed_at : datetime | None
+  +/receipt_number : str <<property, readOnly>>
+  -- 方法 --
+  +receipt_number() : str <<property getter>>
+}
+
+class "進貨明細\nGoodsReceiptItem" as GoodsReceiptItem <<entity>> {
+  +id : int
+  +receipt_id : int
+  +ingredient_id : int
+  +quantity : Decimal | None
+  +unit_price : Decimal | None
+  +expiry_date : date | None
+  +location_id : int | None
+  +note : str | None
+  -- 方法 --
+
+}
+
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> {
+  +id : int
+  +batch_number : str
+  +source_item_id : int
+  +ingredient_id : int
+  +expiry_date : date
+  +received_date : date
+  +current_location_id : int
+  +unit_price : Decimal | None
+  +initial_quantity : Decimal
+  +remaining_quantity : Decimal
+  -- 方法 --
+
+}
+
+class "庫存異動\nInventoryTransaction" as InventoryTransaction <<entity>> {
+  +id : int
+  +operation_group_id : UUID
+  +batch_id : int
+  +type : TransactionType
+  +quantity_delta : Decimal
+  +quantity_before : Decimal
+  +quantity_after : Decimal
+  +operator_id : int
+  +occurred_at : datetime
+  +reason : str
+  +is_non_fefo : bool
+  +reverses_transaction_id : int | None
+  -- 方法 --
+
+}
+
+class "報廢紀錄\nWasteRecord" as WasteRecord <<entity>> {
+  +id : int
+  +batch_id : int
+  +transaction_id : int
+  +quantity : Decimal
+  +reason : WasteReason
+  +note : str | None
+  +loss_amount : Decimal | None
+  +operator_id : int
+  +occurred_at : datetime
+  -- 方法 --
+
+}
+
+class "位置變更紀錄\nBatchLocationChange" as BatchLocationChange <<entity>> {
+  +id : int
+  +batch_id : int
+  +from_location_id : int
+  +to_location_id : int
+  +operator_id : int
+  +occurred_at : datetime
+  +reason : str
+  -- 方法 --
+
+}
 }
 GoodsReceipt -[hidden]right-> GoodsReceiptItem
 GoodsReceiptItem -[hidden]right-> InventoryBatch
@@ -159,30 +183,94 @@ Ingredient -[hidden]down-> InventoryBatch
 StorageLocation -[hidden]down-> InventoryTransaction
 Employee -[hidden]down-> WasteRecord
 AlertSetting -[hidden]down-> BatchLocationChange
-Employee "0..1" -[norank]- "0..*" AlertSetting : updated_by
-Employee "1" -[norank]- "0..*" BatchLocationChange : operator
-Employee "1" -[norank]- "0..*" GoodsReceipt : created_by
-Employee "1" -[norank]- "0..*" InventoryTransaction : operator
-Employee "1" -[norank]- "0..*" WasteRecord : operator
-GoodsReceipt "1" -[norank]- "0..*" GoodsReceiptItem : receipt / items
-GoodsReceiptItem "1" -[norank]- "0..1" InventoryBatch : source_item
-Ingredient "1" -[norank]- "0..*" GoodsReceiptItem : ingredient
-Ingredient "1" -[norank]- "0..*" InventoryBatch : ingredient
-IngredientCategory "1" -[norank]- "0..*" Ingredient : category
-InventoryBatch "1" -[norank]- "0..*" BatchLocationChange : batch
-InventoryBatch "1" -[norank]- "0..*" InventoryTransaction : batch
-InventoryBatch "1" -[norank]- "0..*" WasteRecord : batch
-InventoryTransaction "0..1" -[norank]- "0..1" InventoryTransaction : reverses
-InventoryTransaction "1" -[norank]- "0..1" WasteRecord : transaction
-StorageLocation "1" -[norank]- "0..*" BatchLocationChange : from_location
-StorageLocation "1" -[norank]- "0..*" BatchLocationChange : to_location
-StorageLocation "0..1" -[norank]- "0..*" GoodsReceiptItem : location
-StorageLocation "1" -[norank]- "0..*" InventoryBatch : current_location
-Supplier "1" -[norank]- "0..*" GoodsReceipt : supplier
+class "帳號與權限服務\nAuthService" as AuthService <<service>> {
+  -_repository : AuthRepository
+  -_uow : UnitOfWork
+  -_clock : Clock
+  -_settings : Settings
+  -- 方法 --
+  +login(username, password) : tuple[Employee, str, datetime]
+  +logout(employee_id) : None
+}
+class "進貨服務\nGoodsReceiptService" as GoodsReceiptService <<service>> {
+  -_repository : GoodsReceiptRepository
+  -_ledger : StockLedger
+  -_uow : UnitOfWork
+  -_clock : Clock
+  -- 方法 --
+  +create(supplier_id, receipt_date, items, operator_id) : GoodsReceipt
+  +update(receipt_id, supplier_id, receipt_date, items) : GoodsReceipt
+  +confirm(receipt_id, operator_id) : GoodsReceipt
+}
+class "庫存查詢服務\nInventoryService" as InventoryService <<service>> {
+  +repository : InventoryRepository
+  +clock : Clock
+  -- 方法 --
+  +overview(filters)
+  +batches(ingredient_id, location_id, page, page_size)
+  +transactions(batch_id, page, page_size)
+}
+class "領用服務\nIssueService" as IssueService <<service>> {
+  -_repository : IssueRepository
+  -_ledger : StockLedger
+  -_uow : UnitOfWork
+  -_clock : Clock
+  -_default : BatchSelectionStrategy
+  -_manual : BatchSelectionStrategy
+  -- 方法 --
+  +suggest(ingredient_id, quantity, lines) : Suggestion
+  +issue(ingredient_id, lines, idempotency_key, operator_id) : IssueResult
+}
+abstract class "庫存總帳契約\nStockLedger" as StockLedger <<abstract>> {
+
+  -- 方法 --
+  +receive(item, op) : InventoryTransaction
+  +deduct(batch, quantity, tx_type, op, is_non_fefo) : InventoryTransaction
+  +move(batch, to_location_id, op) : BatchLocationChange | None
+}
+AuthService -[hidden]down-> Employee
+Supplier -[hidden]down-> GoodsReceiptService
+GoodsReceiptService -[hidden]down-> GoodsReceipt
+Ingredient -[hidden]down-> InventoryService
+InventoryService -[hidden]down-> InventoryBatch
+StorageLocation -[hidden]down-> StockLedger
+StockLedger -[hidden]down-> InventoryTransaction
+InventoryTransaction -[hidden]down-> IssueService
+Employee "0..1" -- "0..*" AlertSetting : updated_by
+Employee "1" -- "0..*" BatchLocationChange : operator
+Employee "1" -- "0..*" GoodsReceipt : created_by
+Employee "1" -- "0..*" InventoryTransaction : operator
+Employee "1" -- "0..*" WasteRecord : operator
+GoodsReceipt "1" -- "0..*" GoodsReceiptItem : receipt / items
+GoodsReceiptItem "1" -- "0..1" InventoryBatch : source_item
+Ingredient "1" -- "0..*" GoodsReceiptItem : ingredient
+Ingredient "1" -- "0..*" InventoryBatch : ingredient
+IngredientCategory "1" -- "0..*" Ingredient : category
+InventoryBatch "1" -- "0..*" BatchLocationChange : batch
+InventoryBatch "1" -- "0..*" InventoryTransaction : batch
+InventoryBatch "1" -- "0..*" WasteRecord : batch
+InventoryTransaction "0..1" -- "0..1" InventoryTransaction : reverses
+InventoryTransaction "1" -- "0..1" WasteRecord : transaction
+StorageLocation "1" -- "0..*" BatchLocationChange : from_location
+StorageLocation "1" -- "0..*" BatchLocationChange : to_location
+StorageLocation "0..1" -- "0..*" GoodsReceiptItem : location
+StorageLocation "1" -- "0..*" InventoryBatch : current_location
+Supplier "1" -- "0..*" GoodsReceipt : supplier
+AuthService ..> Employee : «use»
+GoodsReceiptService ..> GoodsReceipt : «use»
+GoodsReceiptService ..> GoodsReceiptItem : «use»
+InventoryService ..> InventoryBatch : «use»
+IssueService ..> InventoryBatch : «use»
+GoodsReceiptService ..> StockLedger : _ledger
+IssueService ..> StockLedger : _ledger
+StockLedger ..> InventoryBatch : «use»
+StockLedger ..> InventoryTransaction : «use»
+StockLedger ..> BatchLocationChange : «use»
+StockLedger ..> GoodsReceiptItem : «use»
 legend bottom left
-  藍：基本資料｜綠：進貨｜橘：庫存與操作紀錄｜紫：帳號與預警
-  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
-  關聯端點為原始多重度；線條交叉不代表關聯或分支
-  基數依 schema；確認入庫的必填規則由 Service 檢查
+  固定排版 PNG／SVG／draw.io 共用同一模型。PlantUML 自動版面可能不同。
+  原始 12 實體、94 成員、20 關聯與多重度保留；新增實際 Service／契約及使用依賴。
+  receipt_number() 為 @property getter 的程式定義；實例以屬性讀取，非一般可呼叫方法。
+  主圖僅列核心公開方法；完整簽名以對應 Python 原始碼為準。
 endlegend
 @enduml

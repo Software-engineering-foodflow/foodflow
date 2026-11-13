@@ -32,3 +32,4 @@
 | 2026-11-09 14:12 | 黃予岑 | feat/backup | 核准並繼續 | 9 | [20261109-mintguesss-98f47363](20261109-mintguesss-98f47363/) |
 | 2026-11-09 21:01 | ChiaJungTien | feat/goods-receipt | 全系統泳道圖、B 文件第三至第五章與 main 同步（補充） | 4 | [20261109-chiajungtien-b-system-swimlane-report-01a1ac49](20261109-chiajungtien-b-system-swimlane-report-01a1ac49/) |
 | 2026-11-09 21:01 | 謝文佳 | feat/alerts-expiry-low-stock | FR-12～14 效期與低庫存預警實作及驗收 | 9 | [20261109-user-01a1c066](20261109-user-01a1c066/) |
+| 2026-11-12～11-13 | ChiaJungTien | docs/b-d-diagrams-20261113 | B／D 文件、整合類別圖、循序圖與八大模組局部圖（已確認） | 12 | [20261113-chiajungtien-b-d-diagrams-01a1ac49](20261113-chiajungtien-b-d-diagrams-01a1ac49/) |

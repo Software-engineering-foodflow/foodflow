@@ -1,23 +1,29 @@
 @startuml b-class-01-auth
-title 食序 FoodFlow｜帳號與權限管理領域類別圖
-caption FR-01、FR-02｜局部視圖，完整關聯見原始總覽圖
-left to right direction
-hide circle
-skinparam linetype polyline
+title 食序 FoodFlow｜帳號與權限管理
+caption FR-01、FR-02｜目前正式整合類別圖的局部視圖
+top to bottom direction
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
-skinparam defaultFontSize 14
+skinparam defaultFontSize 15
 skinparam classAttributeIconSize 0
-skinparam classBorderColor #64748B
-skinparam ArrowColor #475569
-skinparam ArrowFontSize 12
-skinparam nodesep 55
-skinparam ranksep 100
-skinparam padding 6
-skinparam dpi 120
+skinparam classBackgroundColor white
+skinparam classHeaderBackgroundColor #ECECEC
+skinparam classBorderColor #777777
+skinparam linetype polyline
+skinparam dpi 192
+together {
+class "帳號與權限服務\nAuthService" as AuthService <<service>> {
+  -_repository : AuthRepository
+  -_uow : UnitOfWork
+  -_clock : Clock
+  -_settings : Settings
+  -- 方法 --
+  +login(username, password) : tuple[Employee, str, datetime]
+  +logout(employee_id) : None
+}
 
-class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
+class "員工\nEmployee" as Employee <<entity>> {
   +id : int
   +username : str
   +password_hash : str
@@ -26,17 +32,16 @@ class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
   +is_active : bool
   +token_version : int
   +created_at : datetime
+  -- 方法 --
+
 }
-
-
-
+}
+AuthService -[hidden]right-> Employee
+AuthService ..> Employee : «use»
 legend bottom left
-  角色使用 Employee.role 表示，
-  本圖不新增角色或權限資料表。
-  員工的操作紀錄關聯於相關模組圖呈現。
-  ─────────────────────
-  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
-  端點數字為原圖多重度；交叉處不代表關聯或分支
-  共用類別可出現在不同模組圖；屬性均完整保留
+  實線為領域關聯；虛線為使用依賴。類別成員與多重度直接沿用完整圖。
+  僅顯示兩端都在本視圖內的關聯；完整關聯請參照 b-class-diagram。
+  PNG／SVG 與 draw.io 使用固定排版，PlantUML 自動排版可能不同。
+  AuthService 的方法保留於 Service；Employee 不新增登入或 CRUD 方法。
 endlegend
 @enduml
