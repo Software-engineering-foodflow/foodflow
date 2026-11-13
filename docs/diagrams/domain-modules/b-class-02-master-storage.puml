@@ -1,32 +1,41 @@
 @startuml b-class-02-master-storage
-title 食序 FoodFlow｜基本資料與儲存位置管理領域類別圖
-caption FR-03～FR-05｜局部視圖，完整關聯見原始總覽圖
-left to right direction
-hide circle
-skinparam linetype polyline
+title 食序 FoodFlow｜基本資料與儲存位置管理
+caption FR-03～FR-05｜目前正式整合類別圖的局部視圖
+top to bottom direction
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
-skinparam defaultFontSize 14
+skinparam defaultFontSize 15
 skinparam classAttributeIconSize 0
-skinparam classBorderColor #64748B
-skinparam ArrowColor #475569
-skinparam ArrowFontSize 12
-skinparam nodesep 55
-skinparam ranksep 100
-skinparam padding 6
-skinparam dpi 120
+skinparam classBackgroundColor white
+skinparam classHeaderBackgroundColor #ECECEC
+skinparam classBorderColor #777777
+skinparam linetype polyline
+skinparam dpi 192
+together {
+class "供應商\nSupplier" as Supplier <<entity>> {
+  +id : int
+  +name : str
+  +contact_person : str | None
+  +phone : str | None
+  +other_contact : str | None
+  +is_active : bool
+  -- 方法 --
 
-class "食材分類\nIngredientCategory" as IngredientCategory <<entity>> #EFF6FF {
+}
+
+class "食材分類\nIngredientCategory" as IngredientCategory <<entity>> {
   +id : int
   +code : str
   +name : str
   +description : str | None
   +is_active : bool
   +created_at : datetime
+  -- 方法 --
+
 }
 
-class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
+class "食材\nIngredient" as Ingredient <<entity>> {
   +id : int
   +name : str
   +category_id : int
@@ -35,27 +44,49 @@ class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
   +safety_stock_quantity : Decimal
   +is_active : bool
   +created_at : datetime
-}
+  -- 方法 --
 
-class "供應商\nSupplier" as Supplier <<entity>> #EFF6FF {
+}
+}
+Supplier -[hidden]right-> IngredientCategory
+IngredientCategory -[hidden]right-> Ingredient
+together {
+class "員工\nEmployee" as Employee <<entity>> {
   +id : int
+  +username : str
+  +password_hash : str
   +name : str
-  +contact_person : str | None
-  +phone : str | None
-  +other_contact : str | None
+  +role : EmployeeRole
   +is_active : bool
+  +token_version : int
+  +created_at : datetime
+  -- 方法 --
+
 }
 
-class "儲存位置\nStorageLocation" as StorageLocation <<entity>> #EFF6FF {
+class "儲存位置\nStorageLocation" as StorageLocation <<entity>> {
   +id : int
   +code : str
   +name : str
   +storage_type : StorageType
   +description : str | None
   +is_active : bool
+  -- 方法 --
+
 }
 
-class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
+abstract class "庫存總帳契約\nStockLedger" as StockLedger <<abstract>> {
+
+  -- 方法 --
+  +receive(item, op) : InventoryTransaction
+  +deduct(batch, quantity, tx_type, op, is_non_fefo) : InventoryTransaction
+  +move(batch, to_location_id, op) : BatchLocationChange | None
+}
+}
+Employee -[hidden]right-> StorageLocation
+StorageLocation -[hidden]right-> StockLedger
+together {
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> {
   +id : int
   +batch_number : str
   +source_item_id : int
@@ -66,9 +97,11 @@ class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
   +unit_price : Decimal | None
   +initial_quantity : Decimal
   +remaining_quantity : Decimal
+  -- 方法 --
+
 }
 
-class "位置變更紀錄\nBatchLocationChange" as BatchLocationChange <<entity>> #FFF7ED {
+class "位置變更紀錄\nBatchLocationChange" as BatchLocationChange <<entity>> {
   +id : int
   +batch_id : int
   +from_location_id : int
@@ -76,19 +109,13 @@ class "位置變更紀錄\nBatchLocationChange" as BatchLocationChange <<entity>
   +operator_id : int
   +occurred_at : datetime
   +reason : str
-}
+  -- 方法 --
 
-class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
-  +id : int
-  +username : str
-  +password_hash : str
-  +name : str
-  +role : EmployeeRole
-  +is_active : bool
-  +token_version : int
-  +created_at : datetime
 }
-
+}
+InventoryBatch -[hidden]right-> BatchLocationChange
+Supplier -[hidden]down-> Employee
+Employee -[hidden]down-> InventoryBatch
 Employee "1" -- "0..*" BatchLocationChange : operator
 Ingredient "1" -- "0..*" InventoryBatch : ingredient
 IngredientCategory "1" -- "0..*" Ingredient : category
@@ -96,15 +123,12 @@ InventoryBatch "1" -- "0..*" BatchLocationChange : batch
 StorageLocation "1" -- "0..*" BatchLocationChange : from_location
 StorageLocation "1" -- "0..*" BatchLocationChange : to_location
 StorageLocation "1" -- "0..*" InventoryBatch : current_location
-
-
+StockLedger ..> InventoryBatch : «use»
+StockLedger ..> BatchLocationChange : «use»
 legend bottom left
-  供應商與進貨單的關聯見圖 3。
-  位置異動保留 from_location、to_location 兩條關聯。
-  本圖不加入分類與供應商等原圖不存在的關聯。
-  ─────────────────────
-  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
-  端點數字為原圖多重度；交叉處不代表關聯或分支
-  共用類別可出現在不同模組圖；屬性均完整保留
+  實線為領域關聯；虛線為使用依賴。類別成員與多重度直接沿用完整圖。
+  僅顯示兩端都在本視圖內的關聯；完整關聯請參照 b-class-diagram。
+  PNG／SVG 與 draw.io 使用固定排版，PlantUML 自動排版可能不同。
+  移位依賴沿用總圖 StockLedger；不新增總圖未列的資料維護或移位 Service。
 endlegend
 @enduml

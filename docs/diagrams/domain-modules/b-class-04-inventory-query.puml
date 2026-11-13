@@ -1,23 +1,19 @@
 @startuml b-class-04-inventory-query
-title 食序 FoodFlow｜批次庫存查詢領域類別圖
-caption FR-08、FR-09｜局部視圖，完整關聯見原始總覽圖
-left to right direction
-hide circle
-skinparam linetype polyline
+title 食序 FoodFlow｜批次庫存查詢
+caption FR-08、FR-09｜目前正式整合類別圖的局部視圖
+top to bottom direction
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
-skinparam defaultFontSize 14
+skinparam defaultFontSize 15
 skinparam classAttributeIconSize 0
-skinparam classBorderColor #64748B
-skinparam ArrowColor #475569
-skinparam ArrowFontSize 12
-skinparam nodesep 55
-skinparam ranksep 100
-skinparam padding 6
-skinparam dpi 120
-
-class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
+skinparam classBackgroundColor white
+skinparam classHeaderBackgroundColor #ECECEC
+skinparam classBorderColor #777777
+skinparam linetype polyline
+skinparam dpi 192
+together {
+class "食材\nIngredient" as Ingredient <<entity>> {
   +id : int
   +name : str
   +category_id : int
@@ -26,9 +22,49 @@ class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
   +safety_stock_quantity : Decimal
   +is_active : bool
   +created_at : datetime
+  -- 方法 --
+
 }
 
-class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
+class "庫存查詢服務\nInventoryService" as InventoryService <<service>> {
+  +repository : InventoryRepository
+  +clock : Clock
+  -- 方法 --
+  +overview(filters)
+  +batches(ingredient_id, location_id, page, page_size)
+  +transactions(batch_id, page, page_size)
+}
+
+class "員工\nEmployee" as Employee <<entity>> {
+  +id : int
+  +username : str
+  +password_hash : str
+  +name : str
+  +role : EmployeeRole
+  +is_active : bool
+  +token_version : int
+  +created_at : datetime
+  -- 方法 --
+
+}
+}
+Ingredient -[hidden]right-> InventoryService
+InventoryService -[hidden]right-> Employee
+together {
+class "進貨明細\nGoodsReceiptItem" as GoodsReceiptItem <<entity>> {
+  +id : int
+  +receipt_id : int
+  +ingredient_id : int
+  +quantity : Decimal | None
+  +unit_price : Decimal | None
+  +expiry_date : date | None
+  +location_id : int | None
+  +note : str | None
+  -- 方法 --
+
+}
+
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> {
   +id : int
   +batch_number : str
   +source_item_id : int
@@ -39,28 +75,73 @@ class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
   +unit_price : Decimal | None
   +initial_quantity : Decimal
   +remaining_quantity : Decimal
+  -- 方法 --
+
 }
 
-class "儲存位置\nStorageLocation" as StorageLocation <<entity>> #EFF6FF {
+class "儲存位置\nStorageLocation" as StorageLocation <<entity>> {
   +id : int
   +code : str
   +name : str
   +storage_type : StorageType
   +description : str | None
   +is_active : bool
+  -- 方法 --
+
+}
+}
+GoodsReceiptItem -[hidden]right-> InventoryBatch
+InventoryBatch -[hidden]right-> StorageLocation
+together {
+class "庫存異動\nInventoryTransaction" as InventoryTransaction <<entity>> {
+  +id : int
+  +operation_group_id : UUID
+  +batch_id : int
+  +type : TransactionType
+  +quantity_delta : Decimal
+  +quantity_before : Decimal
+  +quantity_after : Decimal
+  +operator_id : int
+  +occurred_at : datetime
+  +reason : str
+  +is_non_fefo : bool
+  +reverses_transaction_id : int | None
+  -- 方法 --
+
 }
 
+class "位置變更紀錄\nBatchLocationChange" as BatchLocationChange <<entity>> {
+  +id : int
+  +batch_id : int
+  +from_location_id : int
+  +to_location_id : int
+  +operator_id : int
+  +occurred_at : datetime
+  +reason : str
+  -- 方法 --
+
+}
+}
+InventoryTransaction -[hidden]right-> BatchLocationChange
+Ingredient -[hidden]down-> GoodsReceiptItem
+GoodsReceiptItem -[hidden]down-> InventoryTransaction
+Employee "1" -- "0..*" BatchLocationChange : operator
+Employee "1" -- "0..*" InventoryTransaction : operator
+GoodsReceiptItem "1" -- "0..1" InventoryBatch : source_item
+Ingredient "1" -- "0..*" GoodsReceiptItem : ingredient
 Ingredient "1" -- "0..*" InventoryBatch : ingredient
+InventoryBatch "1" -- "0..*" BatchLocationChange : batch
+InventoryBatch "1" -- "0..*" InventoryTransaction : batch
+InventoryTransaction "0..1" -- "0..1" InventoryTransaction : reverses
+StorageLocation "1" -- "0..*" BatchLocationChange : from_location
+StorageLocation "1" -- "0..*" BatchLocationChange : to_location
+StorageLocation "0..1" -- "0..*" GoodsReceiptItem : location
 StorageLocation "1" -- "0..*" InventoryBatch : current_location
-
-
+InventoryService ..> InventoryBatch : «use»
 legend bottom left
-  來源進貨明細的關聯見圖 3；
-  數量與位置歷程關聯見圖 8。
-  本圖為查詢使用的物件視圖，不新增資料關聯。
-  ─────────────────────
-  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
-  端點數字為原圖多重度；交叉處不代表關聯或分支
-  共用類別可出現在不同模組圖；屬性均完整保留
+  實線為領域關聯；虛線為使用依賴。類別成員與多重度直接沿用完整圖。
+  僅顯示兩端都在本視圖內的關聯；完整關聯請參照 b-class-diagram。
+  PNG／SVG 與 draw.io 使用固定排版，PlantUML 自動排版可能不同。
+  InventoryService 沿用總圖公開查詢方法；批次來源及異動關聯不改變。
 endlegend
 @enduml

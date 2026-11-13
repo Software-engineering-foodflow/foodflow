@@ -1,23 +1,19 @@
 @startuml b-class-06-alerts
-title 食序 FoodFlow｜效期與低庫存預警領域類別圖
-caption FR-12～FR-14｜局部視圖，完整關聯見原始總覽圖
-left to right direction
-hide circle
-skinparam linetype polyline
+title 食序 FoodFlow｜效期與低庫存預警
+caption FR-12～FR-14｜目前正式整合類別圖的局部視圖
+top to bottom direction
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultFontName Microsoft JhengHei
-skinparam defaultFontSize 14
+skinparam defaultFontSize 15
 skinparam classAttributeIconSize 0
-skinparam classBorderColor #64748B
-skinparam ArrowColor #475569
-skinparam ArrowFontSize 12
-skinparam nodesep 55
-skinparam ranksep 100
-skinparam padding 6
-skinparam dpi 120
-
-class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
+skinparam classBackgroundColor white
+skinparam classHeaderBackgroundColor #ECECEC
+skinparam classBorderColor #777777
+skinparam linetype polyline
+skinparam dpi 192
+together {
+class "員工\nEmployee" as Employee <<entity>> {
   +id : int
   +username : str
   +password_hash : str
@@ -26,18 +22,24 @@ class "員工\nEmployee" as Employee <<entity>> #F2EFF8 {
   +is_active : bool
   +token_version : int
   +created_at : datetime
+  -- 方法 --
+
 }
 
-class "預警設定\nAlertSetting" as AlertSetting <<entity>> #F2EFF8 {
+class "預警設定\nAlertSetting" as AlertSetting <<entity>> {
   +id : int
   +name : str
   +warning_days : int
   +created_at : datetime
   +updated_at : datetime
   +updated_by_id : int | None
-}
+  -- 方法 --
 
-class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
+}
+}
+Employee -[hidden]right-> AlertSetting
+together {
+class "食材\nIngredient" as Ingredient <<entity>> {
   +id : int
   +name : str
   +category_id : int
@@ -46,9 +48,11 @@ class "食材\nIngredient" as Ingredient <<entity>> #EFF6FF {
   +safety_stock_quantity : Decimal
   +is_active : bool
   +created_at : datetime
+  -- 方法 --
+
 }
 
-class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
+class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> {
   +id : int
   +batch_number : str
   +source_item_id : int
@@ -59,20 +63,31 @@ class "庫存批次\nInventoryBatch" as InventoryBatch <<entity>> #FFF7ED {
   +unit_price : Decimal | None
   +initial_quantity : Decimal
   +remaining_quantity : Decimal
+  -- 方法 --
+
 }
 
+class "儲存位置\nStorageLocation" as StorageLocation <<entity>> {
+  +id : int
+  +code : str
+  +name : str
+  +storage_type : StorageType
+  +description : str | None
+  +is_active : bool
+  -- 方法 --
+
+}
+}
+Ingredient -[hidden]right-> InventoryBatch
+InventoryBatch -[hidden]right-> StorageLocation
+Employee -[hidden]down-> Ingredient
 Employee "0..1" -- "0..*" AlertSetting : updated_by
 Ingredient "1" -- "0..*" InventoryBatch : ingredient
-AlertSetting -[hidden]right-> Ingredient
-
-
+StorageLocation "1" -- "0..*" InventoryBatch : current_location
 legend bottom left
-  預警由設定、食材安全庫存量與批次效期計算。
-  AlertSetting 與 Ingredient／InventoryBatch
-  沒有直接資料關聯，不以虛構連線表示計算依賴。
-  ─────────────────────
-  + 公開屬性；/ 衍生唯讀屬性；T | None 可為空
-  端點數字為原圖多重度；交叉處不代表關聯或分支
-  共用類別可出現在不同模組圖；屬性均完整保留
+  實線為領域關聯；虛線為使用依賴。類別成員與多重度直接沿用完整圖。
+  僅顯示兩端都在本視圖內的關聯；完整關聯請參照 b-class-diagram。
+  PNG／SVG 與 draw.io 使用固定排版，PlantUML 自動排版可能不同。
+  預警計算不新增資料關聯；本視圖不補畫總圖未列的 AlertService。
 endlegend
 @enduml
