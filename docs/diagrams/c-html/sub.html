@@ -1,0 +1,57 @@
+<!doctype html><html><head><meta charset="utf-8"><script src="common.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;font-family:"Noto Sans CJK TC","Microsoft JhengHei",sans-serif;color:#222}
+#canvas{position:relative;width:1090px;height:900px;background:#fff}
+.grp{position:absolute;left:20px;width:480px;border:1.3px solid #888;background:#f6f6f6}
+.grp .t{position:absolute;left:14px;width:200px;top:50%;transform:translateY(-50%);font-size:18px;font-weight:700}
+.m{position:absolute;left:250px;width:236px;height:54px;border:1.3px solid #444;background:#fff;font-size:15px;line-height:1.3;padding:6px 10px}
+.m code{font-family:"DejaVu Sans Mono",monospace;font-size:16.5px;font-weight:700;display:block}
+.box{position:absolute;border:1.3px solid #444;background:#fff;text-align:center;font-size:16px;line-height:1.55;padding:10px;display:flex;flex-direction:column;justify-content:center}
+.box b{display:block;font-size:17.5px}
+.elabel{position:absolute;font-size:14.5px;color:#444;background:#fff;padding:0 4px;white-space:nowrap}
+.foot{position:absolute;left:20px;width:1050px;font-size:15px;color:#444;line-height:1.6}
+</style></head><body>
+<div id="canvas"></div>
+<script>
+const groups=[
+ ['帳號與權限',[['auth','帳號、權限']]],
+ ['基本資料與儲存位置',[['master_data','食材、分類、供應商'],['storage_location','儲存位置、批次換位置']]],
+ ['進貨與批次',[['goods_receipt','進貨單、確認入庫、沖銷']]],
+ ['批次庫存查詢',[['inventory','庫存總覽、批次履歷']]],
+ ['食材領用',[['issue','FEFO 建議、領用']]],
+ ['報廢與盤點',[['waste','報廢登記'],['stocktake','盤點調整']]],
+ ['效期與低庫存預警',[['alerts','四類預警']]],
+ ['異動紀錄與統計',[['reports','異動查詢、統計']]],
+];
+const C=document.getElementById('canvas');let y=20;const RH=62,PAD=8,GAP=10;
+for(const [name,ms] of groups){
+  const h=ms.length*RH+PAD*2-8;
+  const g=document.createElement('div');g.className='grp';g.style.top=y+'px';g.style.height=h+'px';
+  g.innerHTML=`<div class="t">${name}</div>`;C.appendChild(g);
+  ms.forEach(([id,zh],i)=>{const m=document.createElement('div');m.className='m';m.id=id;
+    m.style.top=(y+PAD+i*RH)+'px';m.innerHTML=`<code>${id}</code>${zh}`;C.appendChild(m);});
+  y+=h+GAP;
+}
+const c0=C.getBoundingClientRect();
+const R=id=>document.getElementById(id).getBoundingClientRect();
+const top_=id=>R(id).top-c0.top, bot=id=>R(id).bottom-c0.top, cy=id=>(top_(id)+bot(id))/2;
+function box(id,l,t,w,h,html){const b=document.createElement('div');b.className='box';b.id=id;Object.assign(b.style,{left:l+'px',top:t+'px',width:w+'px',height:h+'px'});b.innerHTML=html;C.appendChild(b);}
+const t1=top_('storage_location'),b1=bot('stocktake');
+box('led',620,t1,230,b1-t1,'<b>inventory.<br>StockLedger</b>庫存唯一寫入入口<br><br>批次列鎖<br>餘量、位置<br>異動紀錄');
+const t2=top_('alerts'),b2=bot('reports');
+box('lv',620,t2,230,b2-t2,'<b>stock_levels</b>共用唯讀查詢<br>可用量、低庫存');
+box('db',930,t1,140,b2-t1,'<b>PostgreSQL</b>12 張表<br><br>每張表只有<br>一個模組寫入');
+drawEdges([
+ ...['storage_location','goods_receipt','issue','waste','stocktake'].map(id=>[id,'led',{fs:'r',ts:'l',straightY:1}]),
+ ['alerts','lv',{fs:'r',ts:'l',straightY:1,dash:1}],
+ ['reports','lv',{fs:'r',ts:'l',straightY:1,dash:1}],
+ ['led','db',{fs:'r',ts:'l',straightY:1}],
+ ['lv','db',{fs:'r',ts:'l',straightY:1,dash:1}],
+]);
+function lab(t,l,tp){const e=document.createElement('div');e.className='elabel';e.textContent=t;e.style.left=l+'px';e.style.top=tp+'px';C.appendChild(e);}
+lab('寫入庫存',522,cy('storage_location')-26);lab('唯讀查詢',522,cy('alerts')-26);
+const f=document.createElement('div');f.className='foot';f.style.top=(y+8)+'px';
+f.innerHTML='實線：寫入；虛線：唯讀查詢。模組之間不互相呼叫 Service 或 Repository，例外只有兩個：會改庫存的模組經由 StockLedger 寫入；所有模組的 router 依賴 auth 驗證身分與權限（圖中省略）。StockLedger 屬於 inventory 模組；auth 與 master_data 不經手庫存。';
+C.appendChild(f);C.style.height=(y+8+80)+'px';
+</script></body></html>
