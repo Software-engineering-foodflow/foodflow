@@ -1,0 +1,22 @@
+[
+  {
+    "width": 1024,
+    "duplicateSelectionBlocked": true,
+    "periodRequired": true,
+    "otherNoteRequired": true,
+    "serverPreviewZeroDelta": true,
+    "focusTrapped30Tabs": true,
+    "successVisible": true,
+    "modalAfterSuccess": 0
+  },
+  {
+    "width": 1366,
+    "duplicateSelectionBlocked": true,
+    "periodRequired": true,
+    "otherNoteRequired": true,
+    "serverPreviewZeroDelta": true,
+    "focusTrapped30Tabs": true,
+    "successVisible": true,
+    "modalAfterSuccess": 0
+  }
+]

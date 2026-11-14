@@ -342,6 +342,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/waste-records/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Requests */
+        get: operations["requests_api_v1_waste_records_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/waste-records/requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approve_api_v1_waste_records_requests__request_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/waste-records/requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["reject_api_v1_waste_records_requests__request_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/waste-records/{record_id}": {
         parameters: {
             query?: never;
@@ -1848,8 +1899,17 @@ export interface components {
             batch_id: number;
             /** Actual Quantity */
             actual_quantity: string;
-            /** Reason */
+            /**
+             * Reason
+             * @default
+             */
             reason: string;
+            /** Reason Kind */
+            reason_kind?: ("DAILY" | "PERIODIC" | "ANOMALY" | "OTHER") | null;
+            /** Period */
+            period?: ("WEEKLY" | "MONTHLY" | "QUARTERLY") | null;
+            /** Note */
+            note?: string | null;
             /** Expected Quantity */
             expected_quantity: string;
             /** Expected Transaction Id */
@@ -1866,8 +1926,17 @@ export interface components {
             batch_id: number;
             /** Actual Quantity */
             actual_quantity: string;
-            /** Reason */
+            /**
+             * Reason
+             * @default
+             */
             reason: string;
+            /** Reason Kind */
+            reason_kind?: ("DAILY" | "PERIODIC" | "ANOMALY" | "OTHER") | null;
+            /** Period */
+            period?: ("WEEKLY" | "MONTHLY" | "QUARTERLY") | null;
+            /** Note */
+            note?: string | null;
         };
         /** StocktakePreview */
         StocktakePreview: {
@@ -1880,7 +1949,10 @@ export interface components {
             batch_id: number;
             /** Actual Quantity */
             actual_quantity: string;
-            /** Reason */
+            /**
+             * Reason
+             * @default
+             */
             reason: string;
             /** Expected Quantity */
             expected_quantity: string;
@@ -2236,6 +2308,11 @@ export interface components {
          * @enum {string}
          */
         WasteReason: "EXPIRED" | "SPOILED" | "DAMAGED" | "OTHER";
+        /** WasteReject */
+        WasteReject: {
+            /** Reason */
+            reason: string;
+        };
         /** WasteReportDetail */
         WasteReportDetail: {
             /** Waste Record Id */
@@ -2281,6 +2358,61 @@ export interface components {
             unknown_cost_count: number;
             /** Details */
             details: components["schemas"]["WasteReportDetail"][];
+        };
+        /** WasteRequestPage */
+        WasteRequestPage: {
+            /** Items */
+            items: components["schemas"]["WasteRequestResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** WasteRequestResponse */
+        WasteRequestResponse: {
+            /** Id */
+            id: number;
+            /** Batch Id */
+            batch_id: number;
+            /** Batch Number */
+            batch_number: string;
+            /** Ingredient Name */
+            ingredient_name: string;
+            /** Unit */
+            unit: string;
+            /** Location Name */
+            location_name: string;
+            /** Quantity */
+            quantity: string;
+            reason: components["schemas"]["WasteReason"];
+            /** Note */
+            note: string | null;
+            /** Operator Id */
+            operator_id: number;
+            /** Operator Name */
+            operator_name: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            /** Reviewer Name */
+            reviewer_name: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Rejection Reason */
+            rejection_reason: string | null;
+            /** Record Id */
+            record_id: number | null;
+            /** Transaction Id */
+            transaction_id: number | null;
         };
         /** WasteResponse */
         WasteResponse: {
@@ -4203,7 +4335,240 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminWasteResponse"] | components["schemas"]["WasteResponse"];
+                    "application/json": components["schemas"]["WasteRequestResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    requests_api_v1_waste_records_requests_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WasteRequestPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    approve_api_v1_waste_records_requests__request_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WasteRequestResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    reject_api_v1_waste_records_requests__request_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WasteReject"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WasteRequestResponse"];
                 };
             };
             /** @description Unauthorized */

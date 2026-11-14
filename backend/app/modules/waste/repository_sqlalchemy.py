@@ -5,8 +5,16 @@ from uuid import UUID
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.db import for_update
 from app.core.errors import flush_or_raise
-from app.db.models import GoodsReceiptItem, Ingredient, InventoryBatch, WasteRecord
+from app.db.models import (
+    GoodsReceipt,
+    GoodsReceiptItem,
+    Ingredient,
+    InventoryBatch,
+    WasteRecord,
+    WasteRequest,
+)
 from app.modules.waste.repository import WasteRepository
 
 
@@ -29,6 +37,51 @@ def record_options():
 class SqlAlchemyWasteRepository(WasteRepository):
     def __init__(self, session: Session):
         self._session = session
+
+    def _requests(self):
+        return select(WasteRequest).options(
+            selectinload(WasteRequest.batch).selectinload(InventoryBatch.ingredient),
+            selectinload(WasteRequest.batch).selectinload(InventoryBatch.current_location),
+            selectinload(WasteRequest.operator),
+            selectinload(WasteRequest.reviewer),
+            selectinload(WasteRequest.record).options(*record_options()),
+        )
+
+    def request_by_key(self, key):
+        return self._session.scalar(self._requests().where(WasteRequest.request_key == key))
+
+    def get_request(self, request_id, *, lock=False):
+        stmt = (
+            self._requests()
+            .where(WasteRequest.id == request_id)
+            .execution_options(populate_existing=True)
+        )
+        if lock:
+            stmt = for_update(stmt).execution_options(populate_existing=True)
+        return self._session.scalar(stmt)
+
+    def save_request(self, request):
+        self._session.add(request)
+        flush_or_raise(self._session)
+        return self.get_request(request.id)
+
+    def list_requests(self, page, page_size):
+        total = self._session.scalar(select(func.count()).select_from(WasteRequest))
+        items = self._session.scalars(
+            self._requests()
+            .order_by(WasteRequest.occurred_at.desc(), WasteRequest.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        return list(items), total
+
+    def source_status(self, batch_id):
+        return self._session.scalar(
+            select(GoodsReceipt.status)
+            .join(GoodsReceiptItem, GoodsReceiptItem.receipt_id == GoodsReceipt.id)
+            .join(InventoryBatch, InventoryBatch.source_item_id == GoodsReceiptItem.id)
+            .where(InventoryBatch.id == batch_id)
+        )
 
     def serialize_operation(self, key: UUID) -> None:
         # 跨批次相同 key 也必須序列化；不變更 schema，交易結束自動釋放。

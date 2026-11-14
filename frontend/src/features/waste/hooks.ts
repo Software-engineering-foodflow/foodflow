@@ -3,7 +3,7 @@ import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/
 import { invalidateStockQueries, queryKeys } from "../../shared/api/queryKeys";
 import { useIdempotencyKey } from "../../shared/hooks/useIdempotencyKey";
 import * as api from "./api";
-export type { WasteBatch, WasteInput, WasteRecord } from "./api";
+export type { WasteBatch, WasteInput, WasteRecord, WasteRequest } from "./api";
 export const wasteReasons = [
   { value: "EXPIRED", label: "過期" }, { value: "SPOILED", label: "變質" },
   { value: "DAMAGED", label: "損壞" }, { value: "OTHER", label: "其他" },
@@ -25,6 +25,17 @@ export function useWasteRecords(page: number) {
 export function useWastePending() {
   return useIsMutating({ mutationKey: queryKeys.waste.all }) > 0;
 }
+export function useWasteRequests(page: number) {
+  return useQuery({ queryKey: [...queryKeys.waste.all, "requests", page],
+    queryFn: ({ signal }) => api.listRequests(page, signal) });
+}
+export function useReviewWaste() {
+  const client = useQueryClient();
+  return useMutation({ mutationKey: queryKeys.waste.all, mutationFn: api.reviewRequest,
+    onSuccess: () => invalidateStockQueries(client),
+    onError: () => invalidateStockQueries(client),
+  });
+}
 export function useCreateWaste() {
   const client = useQueryClient();
   return useMutation({ mutationKey: queryKeys.waste.all, mutationFn: api.createWaste, onSuccess: () => invalidateStockQueries(client),
@@ -35,7 +46,7 @@ export function useCreateWaste() {
   });
 }
 /** 每次開框複製明確剩餘量；重新查詢不會改寫已核對的提交量。 */
-export function useFullWaste() {
+export function useFullWaste(onSuccess?: () => void) {
   type Snapshot = Pick<api.WasteBatch, "id" | "batch_number" | "ingredient_name" | "unit" | "remaining_quantity">;
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [reason, setReason] = useState<api.WasteInput["reason"]>("EXPIRED");
@@ -63,6 +74,7 @@ export function useFullWaste() {
         await mutation.mutateAsync({ key, body: { batch_id: snapshot.id,
           quantity: snapshot.remaining_quantity, reason, note: note || null } });
         setUnresolved(null); setCompleted(true); setSnapshot(null); rotate();
+        onSuccess?.();
       } catch (error) {
         const status = error instanceof Error ? api.errorInfo(error).status : undefined;
         // 只有明確業務拒絕才結束操作；傳輸或伺服器錯誤可能已提交。

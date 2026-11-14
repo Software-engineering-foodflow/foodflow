@@ -127,8 +127,8 @@ def test_every_relationship_is_lazy_raise() -> None:
     assert [str(item) for item in relationships if item.lazy != "raise"] == []
 
 
-def test_exactly_twelve_tables() -> None:
-    assert len(Base.metadata.tables) == 12
+def test_exactly_thirteen_tables() -> None:
+    assert len(Base.metadata.tables) == 13
 
 
 def test_primary_keys_are_bigint_identity() -> None:

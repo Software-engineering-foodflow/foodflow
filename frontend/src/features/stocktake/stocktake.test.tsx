@@ -1,9 +1,15 @@
 import { MantineProvider } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { StocktakesPage } from "./pages/StocktakesPage";
 
+const originalScrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+beforeAll(() => Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() }));
+afterAll(() => {
+  if (originalScrollIntoView) Object.defineProperty(HTMLElement.prototype, "scrollIntoView", originalScrollIntoView);
+  else Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+});
 const batches = [
   { id: 1, batch_number: "B-1", ingredient_name: "雞肉", unit: "公斤",
     location_name: "冷藏庫", expiry_date: "2026-11-10", remaining_quantity: "8.000" },
@@ -30,14 +36,15 @@ function mount(write?: Handler, role = "ADMIN") {
   return { fetch, invalidate };
 }
 async function add(id = 1, actual = "7") {
+  if (!screen.queryByRole("dialog")) fireEvent.click(await screen.findByRole("button", { name: "開始多項盤點" }));
   fireEvent.click(await screen.findByRole("button", { name: `加入 B-${id}` }));
   fireEvent.change(screen.getByRole("textbox", { name: `實際量 B-${id}` }), { target: { value: actual } });
-  fireEvent.change(screen.getByRole("textbox", { name: `盤點原因 B-${id}` }), { target: { value: "核對" } });
+  fireEvent.change(screen.getByRole("textbox", { name: `盤點說明 B-${id}` }), { target: { value: "核對" } });
 }
 const previewResponse: Handler = async (_url, options) => {
   const body = JSON.parse(options?.body as string);
   return json({ lines: body.lines.map((line: { batch_id: number; actual_quantity: string; reason: string }) => ({
-    ...line, expected_quantity: line.batch_id === 1 ? "8.000" : "0.000",
+    ...line, reason: "日常盤點：核對", expected_quantity: line.batch_id === 1 ? "8.000" : "0.000",
     expected_transaction_id: line.batch_id === 1 ? 11 : null,
     quantity_delta: line.batch_id === 1 ? "-1.000" : "3.000",
   })) });
@@ -70,8 +77,8 @@ describe("管理者盤點", () => {
     await screen.findByText("盤點已完成");
     const call = fetch.mock.calls.find(([url]) => url === "/api/v1/stocktakes")!;
     expect(JSON.parse(call[1]?.body as string)).toEqual({ lines: [
-      { batch_id: 1, actual_quantity: "7", reason: "核對", expected_quantity: "8.000", expected_transaction_id: 11 },
-      { batch_id: 2, actual_quantity: "3", reason: "核對", expected_quantity: "0.000", expected_transaction_id: null },
+      { batch_id: 1, actual_quantity: "7", reason: "日常盤點：核對", expected_quantity: "8.000", expected_transaction_id: 11 },
+      { batch_id: 2, actual_quantity: "3", reason: "日常盤點：核對", expected_quantity: "0.000", expected_transaction_id: null },
     ] });
     expect(invalidate.mock.calls.map(call => call[0]?.queryKey?.[0]).sort())
       .toEqual(["alerts", "goods-receipt", "inventory", "issue", "reports", "stocktake", "storage-locations", "waste"]);
@@ -83,7 +90,7 @@ describe("管理者盤點", () => {
     mount(previewResponse);
     await add(); await preview();
     if (kind === "actual") fireEvent.change(screen.getByRole("textbox", { name: "實際量 B-1" }), { target: { value: "6" } });
-    if (kind === "reason") fireEvent.change(screen.getByRole("textbox", { name: "盤點原因 B-1" }), { target: { value: "重新核對" } });
+    if (kind === "reason") fireEvent.change(screen.getByRole("textbox", { name: "盤點說明 B-1" }), { target: { value: "重新核對" } });
     if (kind === "add") fireEvent.click(screen.getByRole("button", { name: "加入 B-2" }));
     if (kind === "remove") fireEvent.click(screen.getByRole("button", { name: "移除 B-1" }));
     expect(screen.queryByRole("button", { name: "確認盤點" })).toBeNull();
@@ -99,7 +106,7 @@ describe("管理者盤點", () => {
     await screen.findByText(/最新帳面量：6.000/);
     await waitFor(() => expect(screen.queryByRole("button", { name: "確認盤點" })).toBeNull());
     expect((screen.getByRole("textbox", { name: "實際量 B-1" }) as HTMLInputElement).value).toBe("7");
-    expect((screen.getByRole("textbox", { name: "盤點原因 B-1" }) as HTMLInputElement).value).toBe("核對");
+    expect((screen.getByRole("textbox", { name: "盤點說明 B-1" }) as HTMLInputElement).value).toBe("核對");
     expect(screen.queryByText("盤點已完成")).toBeNull();
     expect(invalidate).toHaveBeenCalledTimes(8);
   });
@@ -141,4 +148,59 @@ describe("管理者盤點", () => {
     expect((screen.getByRole("textbox", { name: "實際量 B-1" }) as HTMLInputElement).value).toBe("-1");
     expect(screen.queryByRole("button", { name: "確認盤點" })).toBeNull();
   });
+});
+
+it("加入後輸入緊接所選批次列，關閉重開仍保留", async () => {
+  mount(); await add(1, "7");
+  const button = screen.getByRole("button", { name: "加入 B-1" });
+  const row = button.closest("tr")!;
+  expect(row.nextElementSibling?.contains(screen.getByRole("textbox", { name: "實際量 B-1" }))).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "關閉盤點（保留輸入）" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "開始多項盤點" }));
+  expect((await screen.findByRole("textbox", { name: "實際量 B-1" }) as HTMLInputElement).value).toBe("7");
+});
+it("搜尋隱藏已選批次仍保留可編輯輸入", async () => {
+  const { fetch } = mount(); await add(1, "7");
+  fetch.mockResolvedValueOnce(json({ items: [batches[1]], total: 1, page: 1, page_size: 20 }));
+  fireEvent.change(screen.getByRole("textbox", { name: "搜尋食材或批號" }), { target: { value: "蔬菜" } });
+  await waitFor(() => expect(screen.queryByRole("button", { name: "加入 B-1" })).toBeNull());
+  expect((screen.getByRole("textbox", { name: "實際量 B-1" }) as HTMLInputElement).value).toBe("7");
+});
+it("定期與其他必填、切換清週期、預覽以請求內容正規化原因", async () => {
+  const { fetch } = mount(async (_url, options) => {
+    const body = JSON.parse(options?.body as string);
+    return json({ lines: body.lines.map((line: { batch_id: number; actual_quantity: string; reason_kind: string; period: string | null; note: string }) => ({ ...line, reason: `${line.reason_kind}/${line.period ?? '無週期'}：${line.note}`, expected_quantity: '8.000', expected_transaction_id: 11, quantity_delta: '-1.000' })) });
+  });
+  await add();
+  const choose = async (label: string, option: string) => { fireEvent.click(screen.getByRole('combobox', { name: label })); fireEvent.click(await screen.findByRole('option', { name: option })); };
+  await choose('盤點原因 B-1', '定期');
+  expect((screen.getByRole('button', { name: '預覽盤點差額' }) as HTMLButtonElement).disabled).toBe(true);
+  await choose('盤點週期 B-1（必填）', '每月');
+  await preview();
+  expect(screen.getByText('PERIODIC/MONTHLY：核對')).toBeTruthy();
+  await choose('盤點原因 B-1', '其他');
+  fireEvent.change(screen.getByRole('textbox', { name: '盤點說明 B-1（必填）' }), { target: { value: '' } });
+  expect((screen.getByRole('button', { name: '預覽盤點差額' }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.change(screen.getByRole('textbox', { name: '盤點說明 B-1（必填）' }), { target: { value: '特殊核對' } });
+  await preview();
+  expect(screen.getByText('OTHER/無週期：特殊核對')).toBeTruthy();
+  const writes = fetch.mock.calls.filter(([url]) => url.endsWith('/preview'));
+  expect(JSON.parse(writes.at(-1)![1]?.body as string).lines[0]).toMatchObject({ reason_kind: 'OTHER', period: null, note: '特殊核對' });
+  await choose('盤點原因 B-1', '定期');
+  expect((screen.getByRole('combobox', { name: '盤點週期 B-1（必填）' }) as HTMLInputElement).value).toBe('');
+});
+it("非當頁已選批次的422原因、週期、說明錯誤可見", async () => {
+  const { fetch } = mount(async () => json({ error: { code: 'VALIDATION_ERROR', message: '輸入錯誤', details: {}, fields: [{ field: 'lines.0.reason_kind', message: '原因無效' }, { field: 'lines.0.period', message: '週期無效' }, { field: 'lines.0.note', message: '說明無效' }] } }, 422));
+  await add();
+  fireEvent.click(screen.getByRole('combobox', { name: '盤點原因 B-1' })); fireEvent.click(await screen.findByRole('option', { name: '定期' }));
+  fireEvent.click(screen.getByRole('combobox', { name: '盤點週期 B-1（必填）' })); fireEvent.click(await screen.findByRole('option', { name: '每月' }));
+  fetch.mockResolvedValueOnce(json({ items: [batches[1]], total: 1, page: 1, page_size: 20 }));
+  fireEvent.change(screen.getByRole('textbox', { name: '搜尋食材或批號' }), { target: { value: '蔬菜' } });
+  await waitFor(() => expect(screen.queryByRole('button', { name: '加入 B-1' })).toBeNull());
+  fireEvent.click(screen.getByRole('button', { name: '預覽盤點差額' }));
+  await screen.findByText('原因無效');
+  expect(screen.getByRole('combobox', { name: '盤點原因 B-1' }).getAttribute('aria-invalid')).toBe('true');
+  expect(screen.getByRole('combobox', { name: '盤點週期 B-1（必填）' }).getAttribute('aria-invalid')).toBe('true');
+  expect(screen.getByRole('textbox', { name: '盤點說明 B-1' }).getAttribute('aria-invalid')).toBe('true');
 });

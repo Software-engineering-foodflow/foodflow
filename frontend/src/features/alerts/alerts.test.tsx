@@ -79,27 +79,28 @@ it("過期全數報廢使用預警快照，失敗保留錯誤且不顯示完成"
   });
   fireEvent.click(await screen.findByRole("button", { name: "全數報廢 鮮奶 B-9" }));
   expect(screen.getByText("本次核對數量：2.125 L")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
   await screen.findByText(/庫存已變更/);
   expect(screen.queryByText("全數報廢已完成")).toBeNull();
   const submitted = fetch.mock.calls.find(([, options]) => options?.method === "POST");
   expect(JSON.parse(submitted?.[1]?.body as string)).toMatchObject({ batch_id: 9, quantity: "2.125", reason: "EXPIRED" });
 });
 
-it("報廢成功移除預警並使用重查的伺服器時間", async () => {
-  let removed = false;
+it("報廢申請成功仍保留預警並使用重查的伺服器時間", async () => {
+  let submitted = false;
   const { client } = mount("STAFF", async (url, options) => {
     if (url.includes("/auth/me")) return json({ id: 1, role: "STAFF" });
     if (url.includes("/storage-locations")) return json({ items: [], total: 0 });
-    if (options?.method === "POST") { removed = true; return json({ id: 1 }); }
-    return json({ items: removed ? [] : [expired], generated_at: removed ? "2026-11-09T02:03:04Z" : "2026-11-09T01:02:03Z", warning_days: 3 });
+    if (options?.method === "POST") { submitted = true; return json({ id: 1, status: "PENDING" }); }
+    return json({ items: [expired], generated_at: submitted ? "2026-11-09T02:03:04Z" : "2026-11-09T01:02:03Z", warning_days: 3 });
   });
   const invalidate = vi.spyOn(client, "invalidateQueries");
   fireEvent.click(await screen.findByRole("button", { name: "全數報廢 鮮奶 B-9" }));
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
-  await screen.findByText("全數報廢已完成");
-  await screen.findByText("目前沒有需要處理的食材");
-  expect(screen.queryByText("鮮奶")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
+  await screen.findByText("報廢申請已送出，待管理員審核；核准前預警仍會保留。");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(screen.getByText("鮮奶")).toBeTruthy();
+  expect(screen.queryByText("目前沒有需要處理的食材")).toBeNull();
   expect(screen.getByText(/10:03:04/)).toBeTruthy();
   expect(invalidate.mock.calls.some(([options]) => options?.queryKey?.[0] === "inventory")).toBe(true);
 });

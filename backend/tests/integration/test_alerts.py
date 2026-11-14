@@ -115,7 +115,8 @@ def test_expired_waste_refresh_and_taipei_midnight(session):
     after_midnight = NOW.replace(hour=16)
     before = service(session, after_midnight).evaluate()
     assert before.items[0].status == "EXPIRED"
-    build_waste_service(session, SqlAlchemyUnitOfWork(session), FixedClock(after_midnight)).create(
+    waste = build_waste_service(session, SqlAlchemyUnitOfWork(session), FixedClock(after_midnight))
+    request = waste.create(
         batch.id,
         before.items[0].remaining_quantity,
         WasteReason.EXPIRED,
@@ -123,6 +124,10 @@ def test_expired_waste_refresh_and_taipei_midnight(session):
         employee.id,
         uuid4(),
     )
+    assert service(session, after_midnight).evaluate().items[0].status == "EXPIRED"
+    admin = add_employee(session, role=EmployeeRole.ADMIN)
+    session.commit()
+    waste.approve(request.id, admin.id)
     refreshed = service(session, after_midnight + timedelta(seconds=1)).list_alerts()
     assert refreshed.items == () and refreshed.generated_at > before.generated_at
 

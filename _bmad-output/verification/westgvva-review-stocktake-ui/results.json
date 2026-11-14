@@ -1,0 +1,172 @@
+[
+  {
+    "width": 1024,
+    "name": "waste",
+    "metrics": {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1024,
+    "name": "waste-modal",
+    "metrics": {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1024,
+    "name": "stocktake",
+    "metrics": {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1024,
+    "name": "stocktake-modal",
+    "metrics": {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1024,
+    "name": "reports",
+    "metrics": {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1024,
+    "keyboard": {
+      "enterOpens": true,
+      "escapeCloses": true,
+      "focusWithinModal": true,
+      "stocktakeInputPreserved": true
+    },
+    "errors": []
+  },
+  {
+    "width": 1366,
+    "name": "waste",
+    "metrics": {
+      "width": 1366,
+      "scrollWidth": 1366,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1366,
+    "name": "waste-modal",
+    "metrics": {
+      "width": 1366,
+      "scrollWidth": 1366,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1366,
+    "name": "stocktake",
+    "metrics": {
+      "width": 1366,
+      "scrollWidth": 1366,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1366,
+    "name": "stocktake-modal",
+    "metrics": {
+      "width": 1366,
+      "scrollWidth": 1366,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1366,
+    "name": "reports",
+    "metrics": {
+      "width": 1366,
+      "scrollWidth": 1366,
+      "smallTargets": [
+        {
+          "text": "收合導覽列",
+          "height": 30,
+          "width": 30
+        }
+      ]
+    }
+  },
+  {
+    "width": 1366,
+    "keyboard": {
+      "enterOpens": true,
+      "escapeCloses": true,
+      "focusWithinModal": true,
+      "stocktakeInputPreserved": true
+    },
+    "errors": []
+  }
+]

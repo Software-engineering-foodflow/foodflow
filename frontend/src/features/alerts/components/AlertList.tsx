@@ -57,7 +57,7 @@ export function AlertList({ filters, lowStockOnly = false }: { filters: AlertFil
       <Table.Td><StatusBadge status={item.status} days={item.days_until_expiry ?? undefined} /></Table.Td>
       <Table.Td>{detail(item)}</Table.Td><Table.Td>{actions(item)}</Table.Td>
     </Table.Tr>)}</DataTable>)}
-    {waste.completed && <Alert color="green" role="status">全數報廢已完成</Alert>}
+    {waste.completed && <Alert color="green" role="status">報廢申請已送出，待管理員審核；核准前預警仍會保留。</Alert>}
     <FullWasteDialog state={waste} />
   </Stack>;
 }

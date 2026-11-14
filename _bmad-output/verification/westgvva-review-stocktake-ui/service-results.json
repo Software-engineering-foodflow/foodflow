@@ -1,0 +1,15 @@
+{
+  "checked_at_utc": "2026-11-14T04:33:30.535396+00:00",
+  "routes": {
+    "/health": 200,
+    "/api/v1/auth/me": 200,
+    "/api/v1/waste-records/requests?page=1": 200,
+    "/api/v1/waste-records?page=1": 200,
+    "/api/v1/stocktakes/batches?page=1": 200,
+    "/api/v1/inventory-transactions?page=1": 200,
+    "/": 200
+  },
+  "source_unchanged": true,
+  "auth": "short-lived signed test session; password login not exercised",
+  "frontend": "http://127.0.0.1:18866"
+}

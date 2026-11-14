@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { MantineProvider, Button } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useNavigate } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { WasteForm } from "./components/WasteForm";
 import { FullWasteDialog } from "./components/FullWasteDialog";
@@ -33,6 +33,161 @@ function writes(mock: ReturnType<typeof vi.fn>) {
 }
 function key(call: unknown[]) { return new Headers((call[1] as RequestInit).headers).get("Idempotency-Key"); }
 
+function HistoryControls() {
+  const navigate = useNavigate();
+  return <Button onClick={() => navigate(-1)}>瀏覽器返回</Button>;
+}
+
+function pageFetch() {
+  const application = { ...record, status: "PENDING", transaction_id: null, record_id: null,
+    location_name: "冷藏庫", reviewer_name: null, reviewed_at: null, rejection_reason: null };
+  return vi.fn(async (url: string, options?: RequestInit) => {
+    if (options?.method === "POST") return json(application);
+    if (url === "/api/v1/auth/me") return json({ id: 1, role: "ADMIN", name: "管理者" });
+    if (url.endsWith("/batches/9")) return json(batch);
+    return json({ items: url.includes("/requests?") ? [application] : url.includes("/batches?") ? [batch] : [], total: url.includes("/requests?") ? 40 : 0,
+      page: url.endsWith("page=2") ? 2 : 1, page_size: 20 });
+  });
+}
+
+it.each(["approve", "reject"] as const)("%s 成功關框並重新顯示審核結果", async action => {
+  let application = { ...record, status: "PENDING", transaction_id: null as number | null,
+    record_id: null as number | null, location_name: "冷藏庫", reviewer_name: null as string | null,
+    reviewed_at: null as string | null, rejection_reason: null as string | null };
+  const fetch = vi.fn(async (url: string, options?: RequestInit) => {
+    if (options?.method === "POST") {
+      application = { ...application, status: action === "approve" ? "APPROVED" : "REJECTED",
+        reviewer_name: "審核管理員", reviewed_at: "2026-11-14T00:00:00Z",
+        transaction_id: action === "approve" ? 4 : null, record_id: action === "approve" ? 1 : null,
+        rejection_reason: action === "reject" ? JSON.parse(options.body as string).reason : null };
+      return json(application);
+    }
+    if (url.endsWith("/auth/me")) return json({ id: 1, role: "ADMIN", name: "管理者" });
+    return json({ items: url.includes("/requests?") ? [application] : [], total: 1, page: 1, page_size: 20 });
+  });
+  vi.stubGlobal("fetch", fetch);
+  mount(<WasteRecordsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: action === "approve" ? "核准申請 #1" : "駁回申請 #1" }));
+  if (action === "reject") fireEvent.change(screen.getByRole("textbox", { name: "駁回原因（必填）" }), { target: { value: "數量有誤" } });
+  fireEvent.click(screen.getByRole("button", { name: action === "approve" ? "核准並報廢" : "確認駁回" }));
+  await screen.findByText(action === "approve" ? "已核准" : "已駁回");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(screen.getByText(/審核：審核管理員/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "核准申請 #1" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "駁回申請 #1" })).toBeNull();
+  expect(writes(fetch)[0][0]).toBe(`/api/v1/waste-records/requests/1/${action}`);
+  if (action === "approve") expect(screen.getByRole("link", { name: "查看異動 #4" }).getAttribute("href")).toContain("transaction_id=4");
+  else {
+    expect(screen.getByText(/駁回原因：數量有誤/)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /查看異動/ })).toBeNull();
+  }
+});
+
+it("普通申請結果未知時關框重開保留原內容與key並禁止另送全數", async () => {
+  const fallback = pageFetch();
+  let submissions = 0;
+  const fetch = vi.fn(async (url: string, options?: RequestInit) => {
+    if (options?.method === "POST" && ++submissions === 1) throw new TypeError("response lost");
+    return fallback(url, options);
+  });
+  vi.stubGlobal("fetch", fetch);
+  mount(<WasteRecordsPage />, "/waste-records?batch_id=9");
+  fireEvent.change(await screen.findByRole("textbox", { name: "報廢數量" }), { target: { value: "1" } });
+  fireEvent.change(screen.getByLabelText("報廢說明"), { target: { value: "核對過期" } });
+  fireEvent.click(screen.getByRole("button", { name: "送出審核" }));
+  await screen.findByText(/上次報廢結果尚未確認/);
+  fireEvent.click(screen.getByRole("button", { name: "取消" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "新增報廢申請" }));
+  const quantity = await screen.findByRole("textbox", { name: "報廢數量" }) as HTMLInputElement;
+  expect(quantity.value).toBe("1");
+  expect(quantity.disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "移除批次" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "全數報廢申請" }) as HTMLButtonElement).disabled).toBe(true);
+  await waitFor(() => expect((screen.getByRole("button", { name: "送出審核" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole("button", { name: "送出審核" }));
+  await screen.findByText("報廢申請已送出，待管理員審核。");
+  expect(writes(fetch)).toHaveLength(2);
+  expect(key(writes(fetch)[0])).toBe(key(writes(fetch)[1]));
+  expect(writes(fetch)[0][1]?.body).toBe(writes(fetch)[1][1]?.body);
+});
+
+it.each(["normal", "full"])("%s 申請成功返回申請第一頁", async kind => {
+  const fetch = pageFetch();
+  vi.stubGlobal("fetch", fetch);
+  mount(<WasteRecordsPage />);
+  const pageTwo = await screen.findByRole("button", { name: "2" });
+  fireEvent.click(pageTwo);
+  await waitFor(() => expect(fetch.mock.calls.some(([url]) => url.endsWith("requests?page=2"))).toBe(true));
+  fireEvent.click(screen.getByRole("button", { name: "新增報廢申請" }));
+  fireEvent.click(await screen.findByRole("button", { name: "選擇 B-9" }));
+  await screen.findByRole("textbox", { name: "報廢數量" });
+  if (kind === "full") {
+    fireEvent.click(screen.getByRole("button", { name: "全數報廢申請" }));
+    fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
+  } else {
+    fireEvent.change(screen.getByRole("textbox", { name: "報廢數量" }), { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: "送出審核" }));
+  }
+  await screen.findByText("報廢申請已送出，待管理員審核。");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(screen.getByRole("button", { name: "2" }).getAttribute("aria-current")).toBeNull();
+  expect(screen.getAllByRole("button", { name: "1" }).every(button => button.getAttribute("aria-current") === "page")).toBe(true);
+});
+
+it("全數申請成功後外層彈窗關閉且成功訊息可見", async () => {
+  vi.stubGlobal("fetch", pageFetch());
+  mount(<WasteRecordsPage />, "/waste-records?batch_id=9");
+  fireEvent.click(await screen.findByRole("button", { name: "全數報廢申請" }));
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
+  await screen.findByText("報廢申請已送出，待管理員審核。");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+it("取消指定批次後瀏覽器返回會重新開啟申請", async () => {
+  vi.stubGlobal("fetch", pageFetch());
+  mount(<><HistoryControls /><WasteRecordsPage /></>, "/waste-records?batch_id=9");
+  await screen.findByRole("textbox", { name: "報廢數量" });
+  fireEvent.click(screen.getAllByRole("button", { name: "取消" }).at(-1)!);
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "瀏覽器返回" }));
+  expect(await screen.findByRole("textbox", { name: "報廢數量" })).toBeTruthy();
+});
+
+it("核准庫存不足顯示伺服器最新剩餘量", async () => {
+  const fallback = pageFetch();
+  vi.stubGlobal("fetch", vi.fn((url: string, options?: RequestInit) =>
+    options?.method === "POST" ? Promise.resolve(failure("0.500")) : fallback(url, options)));
+  mount(<WasteRecordsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: "核准申請 #1" }));
+  fireEvent.click(screen.getByRole("button", { name: "核准並報廢" }));
+  expect(await screen.findByText(/最新剩餘量：0.500/)).toBeTruthy();
+});
+
+it("待審核申請沒有異動連結；管理員駁回必填原因且失敗保留輸入", async () => {
+  const request = { ...record, status: "PENDING", transaction_id: null, record_id: null,
+    location_name: "冷藏庫", reviewer_name: null, reviewed_at: null, rejection_reason: null };
+  const fetch = vi.fn(async (url: string, options?: RequestInit) => {
+    if (options?.method === "POST") return json({ error: {
+      code: "STATE_CONFLICT", message: "申請狀態已改變", fields: [], details: {},
+    } }, 409);
+    if (url === "/api/v1/auth/me") return json({ id: 1, role: "ADMIN", name: "管理者" });
+    return json({ items: url.includes("/requests?") ? [request] : [], total: 1, page: 1, page_size: 20 });
+  });
+  vi.stubGlobal("fetch", fetch);
+  mount(<WasteRecordsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: "駁回申請 #1" }));
+  expect(screen.queryByText(/查看異動/)).toBeNull();
+  const submit = screen.getByRole("button", { name: "確認駁回" });
+  expect((submit as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.change(screen.getByRole("textbox", { name: "駁回原因（必填）" }), { target: { value: "先核對" } });
+  fireEvent.click(submit);
+  await screen.findByText("申請狀態已改變");
+  expect((screen.getByRole("textbox", { name: "駁回原因（必填）" }) as HTMLInputElement).value).toBe("先核對");
+  expect(writes(fetch)[0][0]).toBe("/api/v1/waste-records/requests/1/reject");
+  expect(JSON.parse(writes(fetch)[0][1]!.body as string)).toEqual({ reason: "先核對" });
+});
+
 describe("報廢表單", () => {
   it("保留網路失敗輸入與key；重試成功才清空並失效八類查詢", async () => {
     const fetch = vi.fn().mockRejectedValueOnce(new TypeError("offline")).mockResolvedValue(json(record));
@@ -40,13 +195,13 @@ describe("報廢表單", () => {
     const { invalidate } = mount(<WasteForm batch={batch} />);
     fireEvent.change(screen.getByRole("textbox", { name: /報廢數量/ }), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText("報廢說明"), { target: { value: "過期核對" } });
-    fireEvent.click(screen.getByRole("button", { name: "登記報廢" }));
-    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "送出審核" }));
+    await screen.findByText(/上次報廢結果尚未確認/);
     expect((screen.getByRole("textbox", { name: /報廢數量/ }) as HTMLInputElement).value).toBe("2");
     expect((screen.getByLabelText("報廢說明") as HTMLInputElement).value).toBe("過期核對");
-    expect(screen.queryByText("報廢已完成")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "登記報廢" }));
-    await screen.findByText("報廢已完成");
+    expect(screen.queryByText("報廢申請已送出，待審核")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "送出審核" }));
+    await screen.findByText("報廢申請已送出，待審核");
     expect(fetch.mock.calls[0][0]).toBe("/api/v1/waste-records");
     expect(key(fetch.mock.calls[0])).toBe(key(fetch.mock.calls[1]));
     expect(invalidate.mock.calls.map(c => c[0]?.queryKey?.[0]).sort())
@@ -61,15 +216,15 @@ describe("報廢表單", () => {
     vi.stubGlobal("fetch", fetch);
     mount(<WasteForm batch={batch} />);
     fireEvent.change(screen.getByRole("textbox", { name: /報廢數量/ }), { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "登記報廢" }));
+    fireEvent.click(screen.getByRole("button", { name: "送出審核" }));
     await screen.findByText("數量須為正數");
     fireEvent.change(screen.getByRole("textbox", { name: /報廢數量/ }), { target: { value: "1" } });
-    const submit = screen.getByRole("button", { name: "登記報廢" });
+    const submit = screen.getByRole("button", { name: "送出審核" });
     fireEvent.click(submit); fireEvent.click(submit);
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     expect(key(fetch.mock.calls[0])).not.toBe(key(fetch.mock.calls[1]));
     resolve(json(record));
-    await screen.findByText("報廢已完成");
+    await screen.findByText("報廢申請已送出，待審核");
   });
   it("URL預選批次由真API載入，清單空資料如實顯示", async () => {
     const fetch = vi.fn(async (url: string) => url.endsWith("/batches/9") ? json(batch)
@@ -78,7 +233,7 @@ describe("報廢表單", () => {
     mount(<WasteRecordsPage />, "/waste-records/new?batch_id=9");
     await screen.findByRole("textbox", { name: /報廢數量/ });
     expect(fetch.mock.calls.some(c => c[0] === "/api/v1/waste-records/batches/9")).toBe(true);
-    expect(await screen.findByText("尚無報廢紀錄。")).toBeTruthy();
+    expect(await screen.findByText("尚無已生效報廢紀錄。")).toBeTruthy();
   });
 });
 
@@ -97,12 +252,12 @@ it("全數報廢固定開框快照；409後重開才用新量與新key", async (
   fireEvent.click(screen.getByText("開啟全數報廢"));
   expect((screen.getByRole("combobox", { name: "全數報廢原因" }) as HTMLInputElement).value).toBe("過期");
   fireEvent.click(screen.getByText("模擬新餘量"));
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
   await screen.findByText(/最新剩餘量：1.000/);
   expect(JSON.parse(writes(fetch)[0][1].body).quantity).toBe("2.000");
-  fireEvent.click(screen.getByRole("button", { name: "取消" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "取消" }).at(-1)!);
   fireEvent.click(screen.getByText("開啟全數報廢"));
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
   await waitFor(() => expect(writes(fetch)).toHaveLength(2));
   expect(JSON.parse(writes(fetch)[1][1].body).quantity).toBe("1.000");
   expect(key(writes(fetch)[0])).not.toBe(key(writes(fetch)[1]));
@@ -110,7 +265,7 @@ it("全數報廢固定開框快照；409後重開才用新量與新key", async (
 
 it("一般員工清單不出現金額", async () => {
   vi.stubGlobal("fetch", vi.fn(async (url: string) => json({
-    items: url.includes("batches") ? [] : [record], total: 1, page: 1, page_size: 20,
+    items: url.includes("batches") || url.includes("requests") ? [] : [record], total: 1, page: 1, page_size: 20,
   })));
   const { client } = mount(<WasteRecordsPage />);
   client.setQueryData(queryKeys.auth.all, { role: "STAFF" });
@@ -136,15 +291,15 @@ it("全數報廢衝突後實際頁面重讀批次，重開使用最新量", asyn
   });
   vi.stubGlobal("fetch", fetch);
   mount(<WasteRecordsPage />, "/waste-records/new?batch_id=9");
-  fireEvent.click(await screen.findByRole("button", { name: "全數報廢" }));
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
+  fireEvent.click(await screen.findByRole("button", { name: "全數報廢申請" }));
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
   await screen.findByText(/最新剩餘量：1.000/);
   expect(screen.getByText("本次核對數量：2.000 公斤")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "取消" }));
-  fireEvent.click(screen.getByRole("button", { name: "全數報廢" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "取消" }).at(-1)!);
+  fireEvent.click(screen.getByRole("button", { name: "全數報廢申請" }));
   expect(screen.getByText("本次核對數量：1.000 公斤")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
-  await screen.findByText("全數報廢已完成");
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
+  await screen.findByText("報廢申請已送出，待管理員審核。");
   const calls = writes(fetch);
   expect(JSON.parse(calls[0][1]!.body as string).quantity).toBe("2.000");
   expect(JSON.parse(calls[1][1]!.body as string).quantity).toBe("1.000");
@@ -164,16 +319,16 @@ it("報廢送出期間禁止切換批次與另開全數報廢", async () => {
   mount(<WasteRecordsPage />, "/waste-records/new?batch_id=9");
   const quantity = await screen.findByRole("textbox", { name: /報廢數量/ });
   fireEvent.change(quantity, { target: { value: "1" } });
-  fireEvent.click(screen.getByRole("button", { name: "登記報廢" }));
-  const switchBatch = screen.getByRole("button", { name: "選擇 B-10" });
+  fireEvent.click(screen.getByRole("button", { name: "送出審核" }));
+  const switchBatch = screen.getByRole("button", { name: "移除批次" });
   await waitFor(() => expect((switchBatch as HTMLButtonElement).disabled).toBe(true));
-  expect((screen.getByRole("button", { name: "全數報廢" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "全數報廢申請" }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(switchBatch);
   expect((quantity as HTMLInputElement).value).toBe("1");
   expect(writes(fetch)).toHaveLength(1);
   finish(json(record));
-  await screen.findByText("報廢已完成");
-  await waitFor(() => expect((switchBatch as HTMLButtonElement).disabled).toBe(false));
+  await screen.findByText("報廢申請已送出，待管理員審核。");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
 
@@ -182,14 +337,14 @@ it("全數報廢結果未知時關框重開仍重試原快照與key", async () =
   vi.stubGlobal("fetch", fetch);
   mount(<FullHarness />);
   fireEvent.click(screen.getByText("開啟全數報廢"));
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
   await screen.findByText("上次報廢結果尚未確認，請先重試同筆操作；原數量與原因會保留。");
-  fireEvent.click(screen.getByRole("button", { name: "取消" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "取消" }).at(-1)!);
   fireEvent.click(screen.getByText("模擬新餘量"));
   fireEvent.click(screen.getByText("開啟全數報廢"));
   expect(screen.getByText("本次核對數量：2.000 公斤")).toBeTruthy();
   expect((screen.getByRole("combobox", { name: "全數報廢原因" }) as HTMLInputElement).disabled).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "確認報廢" }));
+  fireEvent.click(screen.getByRole("button", { name: "送出全數報廢審核" }));
   await waitFor(() => expect(writes(fetch)).toHaveLength(2));
   expect(key(writes(fetch)[0])).toBe(key(writes(fetch)[1]));
   expect(JSON.parse(writes(fetch)[0][1].body)).toEqual(JSON.parse(writes(fetch)[1][1].body));

@@ -10,7 +10,7 @@ from app.db.models.master_data import (
     StorageLocation,
     Supplier,
 )
-from app.db.models.waste import WasteRecord
+from app.db.models.waste import WasteRecord, WasteRequest
 
 __all__ = [
     "AlertSetting",
@@ -25,4 +25,5 @@ __all__ = [
     "StorageLocation",
     "Supplier",
     "WasteRecord",
+    "WasteRequest",
 ]

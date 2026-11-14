@@ -1,0 +1,28 @@
+--- a/backend/tests/integration/test_alerts.py
++++ b/backend/tests/integration/test_alerts.py
+@@
+-    build_waste_service(session, SqlAlchemyUnitOfWork(session), FixedClock(after_midnight)).create(
++    waste = build_waste_service(session, SqlAlchemyUnitOfWork(session), FixedClock(after_midnight))
++    request = waste.create(
+@@
+         uuid4(),
+     )
++    assert service(session, after_midnight).evaluate().items[0].status == "EXPIRED"
++    admin = add_employee(session, role=EmployeeRole.ADMIN)
++    session.commit()
++    waste.approve(request.id, admin.id)
+     refreshed = service(session, after_midnight + timedelta(seconds=1)).list_alerts()
+--- a/backend/tests/unit/test_api_conventions.py
++++ b/backend/tests/unit/test_api_conventions.py
+@@
+     ("GET", "/api/v1/waste-records"),
++    ("GET", "/api/v1/waste-records/requests"),
++    ("POST", "/api/v1/waste-records/requests/{request_id}/approve"),
++    ("POST", "/api/v1/waste-records/requests/{request_id}/reject"),
+--- a/backend/tests/unit/test_architecture_rules.py
++++ b/backend/tests/unit/test_architecture_rules.py
+@@
+-def test_exactly_twelve_tables() -> None:
+-    assert len(Base.metadata.tables) == 12
++def test_exactly_thirteen_tables() -> None:
++    assert len(Base.metadata.tables) == 13

@@ -5,7 +5,8 @@ import * as api from "./api";
 
 export type { StocktakeBatch } from "./api";
 export const stocktakeErrorInfo = api.errorInfo;
-type DraftLine = { batch: api.StocktakeBatch; actual_quantity: string; reason: string };
+type DraftLine = { batch: api.StocktakeBatch; actual_quantity: string; reason: string;
+  reason_kind: "DAILY" | "PERIODIC" | "ANOMALY" | "OTHER"; period: "" | "WEEKLY" | "MONTHLY" | "QUARTERLY"; note: string };
 
 export function useStocktakeBatches(search: string, page: number) {
   return useQuery({
@@ -34,22 +35,25 @@ export function useStocktake() {
     add: (batch: api.StocktakeBatch) => {
       if (busy.current || lines.some(line => line.batch.id === batch.id) || lines.length >= 100) return;
       edited();
-      setLines(current => [...current, { batch, actual_quantity: "", reason: "" }]);
+      setLines(current => [...current, { batch, actual_quantity: "", reason: "", reason_kind: "DAILY", period: "", note: "" }]);
     },
     remove: (id: number) => {
       if (busy.current) return;
       edited(); setLines(current => current.filter(line => line.batch.id !== id));
     },
-    edit: (id: number, field: "actual_quantity" | "reason", value: string) => {
+    edit: (id: number, field: "actual_quantity" | "reason" | "reason_kind" | "period" | "note", value: string) => {
       if (busy.current) return;
-      edited(); setLines(current => current.map(line => line.batch.id === id ? { ...line, [field]: value } : line));
+      edited(); setLines(current => current.map(line => line.batch.id === id ? {
+        ...line, [field]: value, ...(field === "reason_kind" ? { period: "" as const } : {}),
+      } as DraftLine : line));
     },
     makePreview: async () => {
       if (busy.current || !lines.length) return;
       busy.current = true; preview.reset(); confirm.reset();
       try {
         await preview.mutateAsync({ lines: lines.map(line => ({
-          batch_id: line.batch.id, actual_quantity: line.actual_quantity, reason: line.reason,
+          batch_id: line.batch.id, actual_quantity: line.actual_quantity,
+          reason: "", reason_kind: line.reason_kind, period: line.period || null, note: line.note || null,
         })) });
       } catch { /* mutation 顯示錯誤，保留輸入。 */ }
       finally { busy.current = false; }
@@ -63,8 +67,10 @@ export function useStocktake() {
           expected_quantity: line.expected_quantity, expected_transaction_id: line.expected_transaction_id,
         })) });
         preview.reset();
+        return true;
       } catch (error) {
         if (error instanceof Error && api.errorInfo(error).status === 409) preview.reset();
+        return false;
       } finally { busy.current = false; }
     },
   };
