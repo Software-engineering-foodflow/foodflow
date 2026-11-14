@@ -8,7 +8,7 @@ from app.core.dependencies import get_idempotency_key
 from app.core.enums import EmployeeRole
 from app.core.errors import ERROR_RESPONSES
 from app.db.models import Employee
-from app.modules.auth.dependencies import get_current_employee
+from app.modules.auth.dependencies import get_current_employee, require_admin
 from app.modules.waste.dependencies import get_waste_service
 from app.modules.waste.schemas import (
     AdminWasteResponse,
@@ -16,8 +16,12 @@ from app.modules.waste.schemas import (
     WasteBatchResponse,
     WasteCreate,
     WastePage,
+    WasteReject,
+    WasteRequestPage,
+    WasteRequestResponse,
     WasteResponse,
     batch_response,
+    request_response,
     waste_response,
 )
 from app.modules.waste.service import WasteService
@@ -43,7 +47,7 @@ def batch(batch_id: int, service: WasteService = Depends(get_waste_service)):
     return batch_response(service.batch(batch_id))
 
 
-@router.post("", response_model=AdminWasteResponse | WasteResponse)
+@router.post("", response_model=WasteRequestResponse)
 def create(
     body: WasteCreate,
     key: UUID = Depends(get_idempotency_key),
@@ -51,7 +55,38 @@ def create(
     service: WasteService = Depends(get_waste_service),
 ):
     record = service.create(body.batch_id, body.quantity, body.reason, body.note, employee.id, key)
-    return waste_response(record, employee.role == EmployeeRole.ADMIN)
+    return request_response(record)
+
+
+@router.get("/requests", response_model=WasteRequestPage)
+def requests(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    service: WasteService = Depends(get_waste_service),
+):
+    items, total = service.list_requests(page, page_size)
+    return WasteRequestPage(
+        items=[request_response(r) for r in items], total=total, page=page, page_size=page_size
+    )
+
+
+@router.post("/requests/{request_id}/approve", response_model=WasteRequestResponse)
+def approve(
+    request_id: int,
+    employee: Employee = Depends(require_admin),
+    service: WasteService = Depends(get_waste_service),
+):
+    return request_response(service.approve(request_id, employee.id))
+
+
+@router.post("/requests/{request_id}/reject", response_model=WasteRequestResponse)
+def reject(
+    request_id: int,
+    body: WasteReject,
+    employee: Employee = Depends(require_admin),
+    service: WasteService = Depends(get_waste_service),
+):
+    return request_response(service.reject(request_id, employee.id, body.reason))
 
 
 @router.get("", response_model=WastePage)

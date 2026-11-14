@@ -3,10 +3,26 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from app.db.models import InventoryBatch, WasteRecord
+from app.core.enums import GoodsReceiptStatus
+from app.db.models import InventoryBatch, WasteRecord, WasteRequest
 
 
 class WasteRepository(ABC):
+    @abstractmethod
+    def request_by_key(self, key: UUID) -> WasteRequest | None: ...
+
+    @abstractmethod
+    def get_request(self, request_id: int, *, lock: bool = False) -> WasteRequest | None: ...
+
+    @abstractmethod
+    def save_request(self, request: WasteRequest) -> WasteRequest: ...
+
+    @abstractmethod
+    def list_requests(self, page: int, page_size: int) -> tuple[list[WasteRequest], int]: ...
+
+    @abstractmethod
+    def source_status(self, batch_id: int) -> GoodsReceiptStatus | None: ...
+
     @abstractmethod
     def serialize_operation(self, key: UUID) -> None: ...
 

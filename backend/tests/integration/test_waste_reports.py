@@ -12,10 +12,17 @@ from sqlalchemy import func, select
 from app.cli import main as cli_main
 from app.core.clock import FixedClock
 from app.core.db import get_session_factory
-from app.core.enums import ErrorCode, TransactionType, WasteReason
+from app.core.enums import ErrorCode, GoodsReceiptStatus, TransactionType, WasteReason
 from app.core.errors import DomainError
 from app.core.uow import SqlAlchemyUnitOfWork
-from app.db.models import InventoryBatch, InventoryTransaction, WasteRecord
+from app.db.models import (
+    GoodsReceipt,
+    GoodsReceiptItem,
+    InventoryBatch,
+    InventoryTransaction,
+    WasteRecord,
+    WasteRequest,
+)
 from app.modules.inventory.ledger import StockOp
 from app.modules.inventory.ledger_sqlalchemy import SqlAlchemyStockLedger
 from app.modules.reports.dependencies import build_reports_service
@@ -40,7 +47,7 @@ def service(session, now=NOW):
 
 
 def submit(svc, seeded, key=None, quantity="2"):
-    return svc.create(
+    request = svc.create(
         seeded.batch_id,
         Decimal(quantity),
         WasteReason.EXPIRED,
@@ -48,6 +55,7 @@ def submit(svc, seeded, key=None, quantity="2"):
         seeded.operator_id,
         key or uuid4(),
     )
+    return svc.approve(request.id, seeded.operator_id).record
 
 
 def test_persistence_replay_and_read_models(session):
@@ -85,7 +93,94 @@ def test_failure_after_record_flush_rolls_back_everything(session):
         assert observer.get_one(InventoryBatch, seeded.batch_id).remaining_quantity == 10
         assert observer.scalar(select(func.count()).select_from(WasteRecord)) == 0
         assert observer.scalar(select(func.count()).select_from(InventoryTransaction)) == 1
+        assert observer.scalar(select(WasteRequest.status)) == "PENDING"
     assert cli_main(["verify-stock"]) == 0
+
+
+def test_pending_and_rejected_requests_do_not_enter_reports(session):
+    seeded = seed_batch(session)
+    svc = service(session)
+    request = svc.create(
+        seeded.batch_id, Decimal("2"), WasteReason.EXPIRED, None, seeded.operator_id, uuid4()
+    )
+    reports = build_reports_service(session)
+    assert reports.waste(DAY, DAY, "ingredient") == []
+    assert reports.stock(DAY, DAY)[0]["closing"] == 10
+    svc.reject(request.id, seeded.operator_id, "keep stock")
+    assert reports.waste(DAY, DAY, "ingredient") == []
+    assert session.scalar(select(func.count()).select_from(WasteRecord)) == 0
+
+
+def test_reversed_source_after_request_keeps_request_pending(session):
+    seeded = seed_batch(session)
+    svc = service(session)
+    application = svc.create(
+        seeded.batch_id, Decimal("2"), WasteReason.EXPIRED, None, seeded.operator_id, uuid4()
+    )
+    request_id = application.id
+    ledger = SqlAlchemyStockLedger(session)
+    batch = ledger.lock_batches([seeded.batch_id])[0]
+    original = session.scalar(
+        select(InventoryTransaction).where(InventoryTransaction.batch_id == batch.id)
+    )
+    ledger.reverse(original, StockOp(uuid4(), seeded.operator_id, NOW, "沖銷來源"))
+    item = session.get_one(GoodsReceiptItem, batch.source_item_id)
+    session.get_one(GoodsReceipt, item.receipt_id).status = GoodsReceiptStatus.REVERSED
+    session.commit()
+    with pytest.raises(DomainError) as caught:
+        svc.approve(request_id, seeded.operator_id)
+    assert caught.value.code == ErrorCode.STATE_CONFLICT
+    with get_session_factory()() as observer:
+        assert observer.get_one(WasteRequest, request_id).status == "PENDING"
+        assert observer.get_one(InventoryBatch, seeded.batch_id).remaining_quantity == 0
+        assert observer.scalar(select(func.count()).select_from(WasteRecord)) == 0
+        assert (
+            observer.scalar(
+                select(func.count())
+                .select_from(InventoryTransaction)
+                .where(InventoryTransaction.type == TransactionType.WASTE)
+            )
+            == 0
+        )
+
+
+@pytest.mark.parametrize("actions", [("approve", "approve"), ("approve", "reject")])
+def test_review_same_request_is_serialized(session, actions):
+    seeded = seed_batch(session)
+    request = service(session).create(
+        seeded.batch_id, Decimal("2"), WasteReason.EXPIRED, None, seeded.operator_id, uuid4()
+    )
+    request_id = request.id
+    gate = Barrier(2)
+
+    def review(action):
+        with get_session_factory()() as worker:
+            svc = service(worker)
+            svc.get_request(request_id)  # intentionally preload stale pending state
+            gate.wait(timeout=10)
+            try:
+                result = (
+                    svc.approve(request_id, seeded.operator_id)
+                    if action == "approve"
+                    else svc.reject(request_id, seeded.operator_id, "keep stock")
+                )
+                return result.status
+            except DomainError as error:
+                return error.code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(review, actions))
+    with get_session_factory()() as observer:
+        final = observer.get_one(WasteRequest, request_id)
+        count = observer.scalar(select(func.count()).select_from(WasteRecord))
+        if actions == ("approve", "approve"):
+            assert outcomes == ["APPROVED", "APPROVED"] and count == 1
+        else:
+            assert ErrorCode.STATE_CONFLICT in outcomes
+            assert count == (1 if final.status == "APPROVED" else 0)
+        assert (
+            observer.get_one(InventoryBatch, seeded.batch_id).remaining_quantity == 10 - 2 * count
+        )
 
 
 @pytest.mark.parametrize("same_key", [False, True])
@@ -214,6 +309,7 @@ def test_real_distribution_unknown_reversal_and_units(session):
         )
         for t in transactions
     ]
+    records = [service(session).approve(r.id, employee.id).record for r in records]
     ledger = SqlAlchemyStockLedger(session)
     ledger.lock_batches([records[0].batch_id])
     ledger.reverse(records[0].transaction, StockOp(uuid4(), employee.id, NOW, "更正"))

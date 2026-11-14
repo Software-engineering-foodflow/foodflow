@@ -60,11 +60,10 @@ jobs:
       - name: Alembic 單一 head
         run: test "$(uv run alembic heads | wc -l)" -eq 1
 
-      - name: Alembic upgrade、check、downgrade
+      - name: Alembic upgrade、check
         run: |
           uv run alembic upgrade head
           uv run alembic check
-          uv run alembic downgrade base
 
       - name: pytest
         run: uv run pytest

@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, WithJsonSchema
@@ -24,6 +24,62 @@ class WasteCreate(BaseModel):
     quantity: PositiveQuantity
     reason: WasteReason
     note: str | None = Field(default=None, max_length=2000)
+
+
+class WasteReject(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    reason: str = Field(min_length=1, max_length=2000)
+
+
+class WasteRequestResponse(BaseModel):
+    id: int
+    batch_id: int
+    batch_number: str
+    ingredient_name: str
+    unit: str
+    location_name: str
+    quantity: PositiveQuantity
+    reason: WasteReason
+    note: str | None
+    operator_id: int
+    operator_name: str
+    occurred_at: datetime
+    status: Literal["PENDING", "APPROVED", "REJECTED"]
+    reviewer_name: str | None
+    reviewed_at: datetime | None
+    rejection_reason: str | None
+    record_id: int | None
+    transaction_id: int | None
+
+
+class WasteRequestPage(BaseModel):
+    items: list[WasteRequestResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+def request_response(request):
+    return WasteRequestResponse(
+        id=request.id,
+        batch_id=request.batch_id,
+        batch_number=request.batch.batch_number,
+        ingredient_name=request.batch.ingredient.name,
+        unit=request.batch.ingredient.unit,
+        location_name=request.batch.current_location.name,
+        quantity=request.quantity,
+        reason=request.reason,
+        note=request.note,
+        operator_id=request.operator_id,
+        operator_name=request.operator.name,
+        occurred_at=request.occurred_at,
+        status=request.status,
+        reviewer_name=request.reviewer.name if request.reviewer else None,
+        reviewed_at=request.reviewed_at,
+        rejection_reason=request.rejection_reason,
+        record_id=request.record_id,
+        transaction_id=request.record.transaction_id if request.record else None,
+    )
 
 
 class WasteResponse(BaseModel):

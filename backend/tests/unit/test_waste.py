@@ -9,9 +9,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.clock import FixedClock
-from app.core.enums import EmployeeRole, ErrorCode, WasteReason
+from app.core.enums import EmployeeRole, ErrorCode, GoodsReceiptStatus, WasteReason
 from app.core.errors import DomainError
-from app.db.models import Employee, Ingredient, InventoryBatch
+from app.db.models import Employee, Ingredient, InventoryBatch, StorageLocation
 from app.main import create_app
 from app.modules.auth.dependencies import get_current_employee
 from app.modules.waste.dependencies import get_waste_service
@@ -42,6 +42,31 @@ def setup():
     uow = FakeUnitOfWork(ledger)
     repo = Mock(spec=WasteRepository)
     records = []
+    requests = []
+    batch.current_location = StorageLocation(id=1, name="冷藏庫")
+    repo.batch.return_value = batch
+    repo.source_status.return_value = GoodsReceiptStatus.CONFIRMED
+    repo.request_by_key.side_effect = lambda key: next(
+        (r for r in requests if r.request_key == key), None
+    )
+    repo.get_request.side_effect = lambda rid, **kwargs: next(
+        (r for r in requests if r.id == rid), None
+    )
+
+    def save_request(request):
+        if request.id is None:
+            request.id = len(requests) + 1
+            request.batch = batch
+            request.operator = employee
+            request.reviewer = None
+            request.record = None
+            requests.append(request)
+        if request.record_id:
+            request.record = records[request.record_id - 1]
+            request.reviewer = employee
+        return request
+
+    repo.save_request.side_effect = save_request
 
     def add(record):
         record.id = len(records) + 1
@@ -59,7 +84,7 @@ def setup():
     return service, ledger, uow, repo, batch, employee
 
 
-def create(setup, **kwargs):
+def request(setup, **kwargs):
     values = dict(
         batch_id=1,
         quantity=Decimal("2"),
@@ -71,6 +96,11 @@ def create(setup, **kwargs):
     return setup[0].create(**(values | kwargs))
 
 
+def create(setup, **kwargs):
+    application = request(setup, **kwargs)
+    return setup[0].approve(application.id, 1).record
+
+
 def test_all_waste_known_cost_and_inactive_ingredient_history(setup):
     result = create(setup)
     assert result.loss_amount == Decimal("240.00")
@@ -79,7 +109,7 @@ def test_all_waste_known_cost_and_inactive_ingredient_history(setup):
     assert len(setup[1].transactions) == 1
     assert setup[1].transactions[0].quantity_before == 2
     assert setup[1].transactions[0].reason == "過期"
-    assert setup[2].commits == 1
+    assert setup[2].commits == 2
     assert "loss_amount" not in waste_response(result, False).model_dump(mode="json")
     assert waste_response(result, True).model_dump(mode="json")["loss_amount"] == "240.00"
 
@@ -97,7 +127,7 @@ def test_invalid_quantity_does_not_deduct(setup, quantity):
         create(setup, quantity=Decimal(quantity))
     assert caught.value.code == ErrorCode.RULE_VIOLATION
     assert not setup[1].transactions
-    assert setup[2].rollbacks == 1
+    assert setup[2].rollbacks == 0
 
 
 def test_other_requires_non_blank_note(setup):
@@ -186,7 +216,10 @@ def test_api_staff_create_list_detail_never_include_cost(client, setup):
     )
     assert response.status_code == 200
     assert "loss_amount" not in response.json()
-    record = setup[3].add.call_args.args[0]
+    application = setup[3].save_request.call_args.args[0]
+    assert application.status == "PENDING"
+    assert not setup[1].transactions
+    record = setup[0].approve(application.id, 1).record
     setup[3].get.return_value = record
     setup[3].list_records.return_value = ([record], 1)
     assert "loss_amount" not in client.get("/api/v1/waste-records/1").text
@@ -223,3 +256,52 @@ def test_large_loss_amount_matches_published_response_schema(setup):
     schema = AdminWasteResponse.model_json_schema()["properties"]["loss_amount"]
     pattern = next(t["pattern"] for t in schema["anyOf"] if t["type"] == "string")
     assert re.fullmatch(pattern, result["loss_amount"])
+
+
+def test_request_replay_does_not_affect_stock(setup):
+    key = uuid4()
+    first = request(setup, key=key)
+    assert request(setup, key=key).id == first.id
+    assert first.status == "PENDING"
+    assert setup[4].remaining_quantity == 2
+    assert not setup[1].transactions
+
+
+def test_legacy_effective_key_cannot_create_new_request(setup):
+    key = uuid4()
+    legacy = create(setup, key=key)
+    setup[3].request_by_key.side_effect = lambda _: None
+    setup[3].save_request.reset_mock()
+    with pytest.raises(DomainError) as caught:
+        request(setup, key=key)
+    assert caught.value.code == ErrorCode.STATE_CONFLICT
+    setup[3].save_request.assert_not_called()
+    assert len(setup[1].transactions) == 1
+    assert legacy.quantity == 2
+
+
+def test_reject_requires_reason_and_blocks_approval(setup):
+    application = request(setup)
+    with pytest.raises(DomainError):
+        setup[0].reject(application.id, 1, " ")
+    result = setup[0].reject(application.id, 1, "核對後不報廢")
+    assert result.reviewer_id == 1 and result.reviewed_at == NOW
+    assert result.status == "REJECTED"
+    assert setup[0].reject(application.id, 1, "核對後不報廢").id == result.id
+    with pytest.raises(DomainError):
+        setup[0].approve(result.id, 1)
+    assert not setup[1].transactions
+
+
+def test_approval_revalidates_source(setup):
+    application = request(setup)
+    setup[3].source_status.return_value = GoodsReceiptStatus.REVERSED
+    with pytest.raises(DomainError):
+        setup[0].approve(application.id, 1)
+    assert application.status == "PENDING"
+    assert not setup[1].transactions
+
+
+@pytest.mark.parametrize("action,body", [("approve", {}), ("reject", {"reason": "不可"})])
+def test_staff_cannot_review(client, action, body):
+    assert client.post(f"/api/v1/waste-records/requests/1/{action}", json=body).status_code == 403

@@ -1,10 +1,10 @@
 """數量使用 Decimal 字串；版本 nullable 但不可省略。"""
 
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.types import NonNegativeQuantity, SignedQuantity
 
@@ -15,14 +15,41 @@ class StocktakeLineInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     batch_id: PositiveId
     actual_quantity: NonNegativeQuantity
-    reason: str = Field(min_length=1, max_length=2000)
+    reason: str = Field(default="", max_length=2000)
+    reason_kind: Literal["DAILY", "PERIODIC", "ANOMALY", "OTHER"] | None = Field(
+        default=None, exclude=True
+    )
+    period: Literal["WEEKLY", "MONTHLY", "QUARTERLY"] | None = Field(default=None, exclude=True)
+    note: str | None = Field(default=None, max_length=1900, exclude=True)
 
-    @field_validator("reason")
-    @classmethod
-    def trim_reason(cls, value: str) -> str:
-        if not value.strip():
+    @model_validator(mode="after")
+    def normalize_reason(self):
+        if self.reason_kind is not None:
+            labels = {
+                "DAILY": "日常盤點",
+                "PERIODIC": "定期盤點",
+                "ANOMALY": "異常盤點",
+                "OTHER": "其他",
+            }
+            periods = {"WEEKLY": "每週", "MONTHLY": "每月", "QUARTERLY": "每季"}
+            note = (self.note or "").strip()
+            if self.reason_kind == "PERIODIC" and not self.period:
+                raise ValueError("定期盤點必須選擇每週、每月或每季")
+            if self.reason_kind != "PERIODIC" and self.period:
+                raise ValueError("只有定期盤點可以選擇週期")
+            if self.reason_kind == "OTHER" and not note:
+                raise ValueError("其他原因必須填寫說明")
+            self.reason = labels[self.reason_kind]
+            if self.period:
+                self.reason += f"（{periods[self.period]}）"
+            if note:
+                self.reason += f"：{note}"
+        elif self.period is not None or self.note is not None:
+            raise ValueError("請選擇盤點原因類別")
+        if not self.reason.strip():
             raise ValueError("請填寫盤點原因")
-        return value.strip()
+        self.reason = self.reason.strip()
+        return self
 
 
 class StocktakeConfirmLine(StocktakeLineInput):

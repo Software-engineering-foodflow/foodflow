@@ -1,3 +1,4 @@
+import pytest
 from alembic import command
 from alembic.script import ScriptDirectory
 from sqlalchemy import CheckConstraint, inspect, select
@@ -20,6 +21,7 @@ EXPECTED_TABLES = {
     "storage_location",
     "supplier",
     "waste_record",
+    "waste_request",
 }
 
 
@@ -27,11 +29,12 @@ def _tables() -> set[str]:
     return set(inspect(get_engine()).get_table_names()) - {"alembic_version"}
 
 
-def test_downgrade_empties_then_upgrade_rebuilds_without_drift() -> None:
+def test_upgrade_matches_metadata_and_downgrade_preserves_audit_tables() -> None:
     config = alembic_config()
 
-    command.downgrade(config, "base")
-    assert _tables() == set()
+    with pytest.raises(RuntimeError, match="downgrade"):
+        ScriptDirectory.from_config(config).get_revision("0002").module.downgrade()
+    assert _tables() == EXPECTED_TABLES
 
     command.upgrade(config, "head")
     assert _tables() == EXPECTED_TABLES

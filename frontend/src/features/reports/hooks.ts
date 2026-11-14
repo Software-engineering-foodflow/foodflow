@@ -2,6 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../shared/api/queryKeys";
 import * as api from "./api";
 export type { Transaction } from "./api";
+export function useAllTransactions(params: string, enabled: boolean) {
+  return useQuery({ queryKey: queryKeys.reports.query("all-transactions", params),
+    queryFn: ({ signal }) => api.allTransactions(params, signal), enabled });
+}
 export function useTransactions(params: string) {
   return useQuery({ queryKey: queryKeys.reports.query("transactions", params),
     queryFn: ({ signal }) => api.transactions(params, signal) });

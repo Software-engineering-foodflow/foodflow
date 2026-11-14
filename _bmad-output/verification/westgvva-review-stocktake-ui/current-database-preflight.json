@@ -1,0 +1,11 @@
+{
+  "database": "foodflow",
+  "revision": "0001",
+  "waste_request_exists": false,
+  "batches": 21,
+  "transactions": 21,
+  "waste_records": 0,
+  "stock_mismatches": 0,
+  "checked_at_utc": "2026-11-13T12:26:00.483190+00:00",
+  "mode": "read-only; no backup or migration performed"
+}

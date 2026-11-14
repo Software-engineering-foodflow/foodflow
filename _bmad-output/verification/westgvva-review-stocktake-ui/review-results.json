@@ -1,0 +1,18 @@
+[
+  {
+    "width": 1024,
+    "fullSuccessClosesBothDialogs": true,
+    "pendingLeavesStockUnchanged": true,
+    "backReopensBatch": true,
+    "noHorizontalOverflow": true,
+    "pageErrors": []
+  },
+  {
+    "width": 1366,
+    "fullSuccessClosesBothDialogs": true,
+    "pendingLeavesStockUnchanged": true,
+    "backReopensBatch": true,
+    "noHorizontalOverflow": true,
+    "pageErrors": []
+  }
+]

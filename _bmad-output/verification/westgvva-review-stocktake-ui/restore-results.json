@@ -1,0 +1,130 @@
+{
+  "checked_at_utc": "2026-11-13T19:32:06.514429+00:00",
+  "dump": "C:\\Users\\USER\\Documents\\GitHub\\foodflow\\backups\\foodflow-20261113-220715.dump",
+  "dump_sha256": "e5af0cc0913aa36701ac9173e6f4f2a32389efca31ec3bdc7927037e4b8c4c59",
+  "restored_database": "foodflow_restore_240e0582caa5_test",
+  "source_unchanged": true,
+  "restored_matches_current_source": true,
+  "before_upgrade": {
+    "revision": "0001",
+    "tables": {
+      "alembic_version": {
+        "rows": 1,
+        "sha256": "7afca5feaf4f2d11725802d59d0a0c94b0dd7b0b3d4099a37ada2c154078ef38"
+      },
+      "inventory_batch": {
+        "rows": 21,
+        "sha256": "b5a0174b77193c859af64382a30754e0d33be96c094ae1f3593fe2c1e108b7e1"
+      },
+      "storage_location": {
+        "rows": 5,
+        "sha256": "9d2202b2863d5ef7170bbdbf82abe6dad08bc1e267ec29b229b6c21850fe1990"
+      },
+      "batch_location_change": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "ingredient": {
+        "rows": 13,
+        "sha256": "afcf19fe593ddd171abadecbd92f69857e0a643b0fcb62908d6a48c0bd2054b6"
+      },
+      "supplier": {
+        "rows": 3,
+        "sha256": "503d1002a908c26c7ef9d7a65b316b4a22a732a1bd6481c075a5c50dc7ce701b"
+      },
+      "ingredient_category": {
+        "rows": 5,
+        "sha256": "1922c0ed8a5363dc1872a048495a436c99d06728df26cf99dfe5f15ca19443cd"
+      },
+      "inventory_transaction": {
+        "rows": 21,
+        "sha256": "3e7eb439b0a62c41a3ec25331a854ae167e086983d16bd68b2ba13b2dbfe7c2b"
+      },
+      "goods_receipt": {
+        "rows": 2,
+        "sha256": "c3679364bac3d00084e48c5fade7884d4fd3ea02f653a98c2d5561ebe8a6d23a"
+      },
+      "waste_record": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "goods_receipt_item": {
+        "rows": 21,
+        "sha256": "46727273fa19e4861b929c58c62c8aff7f2d3486fc824e72358debb2d1525262"
+      },
+      "employee": {
+        "rows": 2,
+        "sha256": "b735c72bce6518f869b2cc5b8355cb1db55b66e25f15456007843de3977b164b"
+      },
+      "alert_setting": {
+        "rows": 1,
+        "sha256": "142d1408011f658c772e5f223fc8448ed1ceb1028a200d7e46eca57661c7170c"
+      }
+    },
+    "stock_mismatches": 0
+  },
+  "after_upgrade": {
+    "revision": "0002",
+    "tables": {
+      "alembic_version": {
+        "rows": 1,
+        "sha256": "dec4a47040d652b6335e3ef22a59fa72f5c35c8706f21b2f92631305b2ebaa13"
+      },
+      "inventory_batch": {
+        "rows": 21,
+        "sha256": "b5a0174b77193c859af64382a30754e0d33be96c094ae1f3593fe2c1e108b7e1"
+      },
+      "storage_location": {
+        "rows": 5,
+        "sha256": "9d2202b2863d5ef7170bbdbf82abe6dad08bc1e267ec29b229b6c21850fe1990"
+      },
+      "batch_location_change": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "ingredient": {
+        "rows": 13,
+        "sha256": "afcf19fe593ddd171abadecbd92f69857e0a643b0fcb62908d6a48c0bd2054b6"
+      },
+      "supplier": {
+        "rows": 3,
+        "sha256": "503d1002a908c26c7ef9d7a65b316b4a22a732a1bd6481c075a5c50dc7ce701b"
+      },
+      "ingredient_category": {
+        "rows": 5,
+        "sha256": "1922c0ed8a5363dc1872a048495a436c99d06728df26cf99dfe5f15ca19443cd"
+      },
+      "inventory_transaction": {
+        "rows": 21,
+        "sha256": "3e7eb439b0a62c41a3ec25331a854ae167e086983d16bd68b2ba13b2dbfe7c2b"
+      },
+      "goods_receipt": {
+        "rows": 2,
+        "sha256": "c3679364bac3d00084e48c5fade7884d4fd3ea02f653a98c2d5561ebe8a6d23a"
+      },
+      "waste_record": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "goods_receipt_item": {
+        "rows": 21,
+        "sha256": "46727273fa19e4861b929c58c62c8aff7f2d3486fc824e72358debb2d1525262"
+      },
+      "employee": {
+        "rows": 2,
+        "sha256": "b735c72bce6518f869b2cc5b8355cb1db55b66e25f15456007843de3977b164b"
+      },
+      "alert_setting": {
+        "rows": 1,
+        "sha256": "142d1408011f658c772e5f223fc8448ed1ceb1028a200d7e46eca57661c7170c"
+      },
+      "waste_request": {
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "stock_mismatches": 0
+  },
+  "alembic_check": "passed",
+  "retained_database": true
+}

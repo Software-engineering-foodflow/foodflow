@@ -249,6 +249,40 @@ def test_api_version_is_required_nullable_positive_integer(client):
         assert response.status_code == 422
 
 
+@pytest.mark.parametrize(
+    "kind,period,note,expected",
+    [
+        ("DAILY", None, None, "日常盤點"),
+        ("PERIODIC", "WEEKLY", "核對", "定期盤點（每週）：核對"),
+        ("PERIODIC", "MONTHLY", None, "定期盤點（每月）"),
+        ("PERIODIC", "QUARTERLY", None, "定期盤點（每季）"),
+        ("ANOMALY", None, None, "異常盤點"),
+        ("OTHER", None, "原因", "其他：原因"),
+    ],
+)
+def test_structured_reason_normalizes_to_compatible_history(client, kind, period, note, expected):
+    response = client.post(
+        "/api/v1/stocktakes/preview", json=body(reason_kind=kind, period=period, note=note)
+    )
+    assert response.status_code == 200
+    line = response.json()["lines"][0]
+    assert line["reason"] == expected
+    assert "reason_kind" not in line
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"reason_kind": "PERIODIC"},
+        {"reason_kind": "OTHER", "note": " "},
+        {"reason_kind": "DAILY", "period": "WEEKLY"},
+        {"note": "orphan"},
+    ],
+)
+def test_structured_reason_requires_period_or_note(client, fields):
+    assert client.post("/api/v1/stocktakes/preview", json=body(**fields)).status_code == 422
+
+
 @pytest.mark.parametrize("role", ["staff", "anonymous"])
 @pytest.mark.parametrize(
     "method,path",

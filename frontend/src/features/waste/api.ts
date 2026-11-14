@@ -3,6 +3,7 @@ import type { components } from "../../shared/api/schema";
 export type WasteInput = components["schemas"]["WasteCreate"];
 export type WasteBatch = components["schemas"]["WasteBatchResponse"];
 export type WasteRecord = components["schemas"]["AdminWasteResponse"] | components["schemas"]["WasteResponse"];
+export type WasteRequest = components["schemas"]["WasteRequestResponse"];
 export const listBatches = (search: string, page: number, signal?: AbortSignal) =>
   request<components["schemas"]["WasteBatchPage"]>(`${API_PREFIX}/waste-records/batches?search=${encodeURIComponent(search)}&page=${page}`, { signal });
 export const getBatch = (id: number, signal?: AbortSignal) =>
@@ -10,7 +11,13 @@ export const getBatch = (id: number, signal?: AbortSignal) =>
 export const listRecords = (page: number, signal?: AbortSignal) =>
   request<components["schemas"]["WastePage"]>(`${API_PREFIX}/waste-records?page=${page}`, { signal });
 export const createWaste = ({ body, key }: { body: WasteInput; key: string }) =>
-  request<WasteRecord>(`${API_PREFIX}/waste-records`, { method: "POST", body, idempotencyKey: key });
+  request<WasteRequest>(`${API_PREFIX}/waste-records`, { method: "POST", body, idempotencyKey: key });
+export const listRequests = (page: number, signal?: AbortSignal) =>
+  request<components["schemas"]["WasteRequestPage"]>(`${API_PREFIX}/waste-records/requests?page=${page}`, { signal });
+export const reviewRequest = ({ id, action, reason }: { id: number; action: "approve" | "reject"; reason?: string }) =>
+  request<WasteRequest>(`${API_PREFIX}/waste-records/requests/${id}/${action}`, {
+    method: "POST", ...(action === "reject" ? { body: { reason } } : {}),
+  });
 export function errorInfo(error: Error | null) {
   return { message: error?.message, status: error instanceof ApiError ? error.status : undefined, fields: error instanceof ApiError ? error.fields : [],
     remaining: error instanceof ApiError ? error.details?.remaining_quantity : undefined };
