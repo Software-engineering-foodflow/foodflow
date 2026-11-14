@@ -1,7 +1,9 @@
 @startuml b-sequence-receipt-confirmation
+!pragma teoz true
+!pragma sequenceMessageSpan true
 title 食序 FoodFlow｜UC-06 確認入庫循序圖
 caption FR-06、FR-07｜前提：已登入且已有進貨草稿；依目前程式實作
-hide footbox
+mainframe <size:18>sd UC-06 確認入庫</size>
 autonumber
 skinparam backgroundColor white
 skinparam shadowing false
@@ -10,11 +12,15 @@ skinparam defaultFontSize 18
 skinparam titleFontSize 26
 skinparam captionFontSize 18
 skinparam noteFontSize 18
-skinparam noteFontColor #1F2937
-skinparam dpi 144
-skinparam maxMessageSize 300
-skinparam sequenceMessageAlign center
-skinparam BoxPadding 8
+skinparam noteFontColor #223344
+skinparam noteBackgroundColor #F7FBFE
+skinparam noteBorderColor #A8C7DC
+skinparam dpi 300
+skinparam maxMessageSize 600
+skinparam sequenceMessageAlign left
+skinparam BoxPadding 4
+skinparam sequenceReferenceFontSize 18
+skinparam sequenceDividerFontSize 18
 skinparam sequence {
   ArrowFontSize 18
   ParticipantFontSize 18
@@ -22,26 +28,31 @@ skinparam sequence {
   ActorFontSize 18
   GroupFontSize 18
   GroupHeaderFontSize 18
-  ArrowColor #475569
-  LifeLineBorderColor #94A3B8
-  ParticipantBorderColor #64748B
-  ParticipantBackgroundColor #EFF6FF
-  ActorBorderColor #475569
-  GroupBorderColor #94A3B8
-  GroupBackgroundColor #F8FAFC
-  GroupHeaderFontColor #334155
+  ArrowColor #246B92
+  LifeLineBorderColor #B7BCC5
+  ParticipantBorderColor #A8C7DC
+  ParticipantBackgroundColor #E3F2FD
+  ActorBorderColor #64748B
+  LifeLineBackgroundColor #DDEBF7
+  ArrowFontColor #182B3A
+  ReferenceBorderColor #333333
+  ReferenceBackgroundColor white
+  GroupBorderColor #333333
+  GroupBackgroundColor white
+  GroupHeaderFontColor #111111
 }
 
 actor "操作人員\n一般員工／管理者" as User
-boundary "進貨前端\nGoodsReceiptsPage／hooks／api" as UI
-control "API／Controller\nrouter.confirm＋錯誤處理" as API
-control "GoodsReceiptService" as Service
-participant "GoodsReceiptRepository\nSqlAlchemy 實作" as Repo
-participant "StockLedger\nSqlAlchemyStockLedger" as Ledger
-participant "UnitOfWork\nSqlAlchemyUnitOfWork" as UoW
+participant "進貨前端\nGoodsReceiptsPage\n／hooks／api" as UI
+participant "API／Controller\nrouter.confirm＋錯誤處理" as API
+participant "GoodsReceipt\nService" as Service
+participant "GoodsReceipt\nRepository\nSqlAlchemy 實作" as Repo
+participant "StockLedger\nSqlAlchemy\nStockLedger" as Ledger
+participant "UnitOfWork\nSqlAlchemy\nUnitOfWork" as UoW
 database "PostgreSQL" as DB
 
 User -> UI : 核對明細並按「確認入庫」
+activate UI
 opt 表單有尚未儲存的變更
   ref over UI, DB
     先 PATCH /api/v1/goods-receipts/{id} 儲存草稿（獨立交易）
@@ -49,48 +60,64 @@ opt 表單有尚未儲存的變更
   end ref
 end
 UI -> API : POST /api/v1/goods-receipts/{receipt_id}/confirm\nconfirmReceipt(id)，攜帶登入 Cookie
-note over UI, API
-  共用 get_current_employee 驗證 JWT、有效時間、啟用狀態與 token_version。
-  未登入回 401；路徑格式錯誤回 422，均不進入 confirm 業務流程。
+activate API
+note over UI, Service
+  共用 get_current_employee 驗證 JWT、 有效時間、 啟用狀態與 token_version。
+  未登入回 401； 路徑格式錯誤回 422， 均不進入 confirm 業務流程。
 end note
 API -> Service : confirm(receipt_id, operator_id=employee.id)
+activate Service
 Service -> UoW : transaction()：進入業務交易區塊
-note over UoW, DB
-  UoW 以 context manager 管理 commit／rollback。
-  SQLAlchemy 於執行 SQL 時開啟實際交易；下圖不虛構 begin() 呼叫。
+note over Service, DB
+  UoW 以 context manager 管理 commit／rollback。 SQLAlchemy 於執行 SQL 時開啟實際交易； 下圖不虛構 begin() 呼叫。
 end note
 Service -> Repo : lock(receipt_id)
+activate Repo
 Repo -> DB : SELECT goods_receipt FOR UPDATE\n並載入回應需要的明細與關聯
 DB --> Repo : 單據／查無資料
 Repo --> Service : receipt 或 None
+deactivate Repo
 
 alt 已是 CONFIRMED：相同單據重送
   Service -> Repo : get(receipt_id)
+activate Repo
   Repo -> DB : 讀取目前單據、明細、批次與異動
   DB --> Repo : 目前完整單據
   Repo --> Service : GoodsReceipt（不新增批次或異動）
+deactivate Repo
   Service -> UoW : 正常離開 transaction()
   UoW -> DB : Session.commit()，釋放列鎖
   Service --> API : 目前已確認單據
+deactivate Service
   API --> UI : HTTP 200 ReceiptResponse
+deactivate API
   UI -> UI : 更新單據快取；invalidateStockQueries()
   UI --> User : 顯示已確認入庫狀態
+deactivate UI
 else DRAFT 且驗證、寫入全部成功：首次入庫
   Service -> Service : _draft(receipt)；Clock.now()\n建立 ReceiptItemInput，呼叫 _validate(confirming=True)
+activate UI
+activate API
+activate Service
   Service -> Repo : supplier(supplier_id)
+activate Repo
   Repo -> DB : 查詢供應商
   DB --> Repo : Supplier
   Repo --> Service : 供應商資料
+deactivate Repo
   loop 每筆進貨明細
     Service -> Repo : ingredient(id)；有位置時 location(id)
+activate Repo
     Repo -> DB : 查詢食材及位置
     DB --> Repo : Ingredient／StorageLocation
     Repo --> Service : 關聯資料
+deactivate Repo
     Service -> Service : 檢查啟用狀態、數量／單價精度、必填欄位\n到期日不得早於進貨日或今天
   end
   Service -> Service : StockOp(uuid4(), operator_id, now)
   loop 每筆明細：同一交易內建立一個批次與一筆進貨異動
     Service -> Ledger : receive(item, op)
+activate Ledger
     Ledger -> DB : SELECT GoodsReceipt.receipt_date
     DB --> Ledger : 進貨日期
     Ledger -> Ledger : batch_from_item()；新批次 remaining_quantity 暫設 0
@@ -99,30 +126,42 @@ else DRAFT 且驗證、寫入全部成功：首次入庫
     Ledger -> DB : UPDATE 批次餘量；INSERT 進貨異動；flush
     DB --> Ledger : 批次及異動寫入（尚未 commit）
     Ledger --> Service : InventoryTransaction
+deactivate Ledger
   end
   Service -> Service : status = CONFIRMED；confirmed_at = now
   Service -> Repo : flush()
+activate Repo
   Repo -> DB : UPDATE goods_receipt；flush
   Service -> Repo : get(receipt_id)
   Repo -> DB : 載入完整單據及入庫結果
   DB --> Repo : 完整資料
   Repo --> Service : GoodsReceipt
+deactivate Repo
   Service -> UoW : 正常離開 transaction()
   UoW -> DB : Session.commit()，整張單一併生效
   Service --> API : GoodsReceipt
+deactivate Service
   API -> API : _response(receipt)
   API --> UI : HTTP 200 ReceiptResponse
+deactivate API
   UI -> UI : 更新單據快取；invalidateStockQueries()
   UI --> User : 顯示「進貨已確認入庫」
+deactivate UI
 else 任一步驟失敗：在發生處中止，不執行成功分支剩餘呼叫
   Service -> UoW : 例外離開 transaction()
+activate UI
+activate API
+activate Service
   UoW -> DB : Session.rollback()，撤回本次全部寫入並釋放鎖
   Service --> API : DomainError／未預期例外
+deactivate Service
   API --> UI : HTTP 404／409／422／500 統一錯誤回應
+deactivate API
   UI --> User : 顯示錯誤；欄位錯誤標示並聚焦供修正
+deactivate UI
 end
-note over Service, Ledger
-  確認入庫使用「單頭列鎖＋狀態機」防重送，不使用 Idempotency-Key。
-  同一明細的 source_item_id 唯一限制亦防止重複批次；Ledger 只 flush，不 commit。
+note over Service, DB
+  確認入庫使用「單頭列鎖＋狀態機」防重送， 不使用 Idempotency-Key。 同一明細的 source_item_id
+  唯一限制亦防止重複批次； Ledger 只 flush， 不 commit。
 end note
 @enduml

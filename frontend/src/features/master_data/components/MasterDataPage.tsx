@@ -64,9 +64,9 @@ export function MasterDataPage({ resource }: { resource: Resource }) {
     { label: "說明", value: item => "description" in item ? item.description || "—" : null },
   ] : resource === "ingredients" ? [
     { label: "分類", value: item => "category_name" in item ? item.category_name : null },
-    { label: "單位", value: item => "unit" in item ? item.unit : null },
     { label: "保存方式", value: item => "storage_method" in item ? <Group gap={6}><StorageTypeIcon type={item.storage_method} size={28} muted={!item.is_active} />{storageTypeLabels[item.storage_method]}</Group> : null },
     { label: "安全庫存量", value: item => "safety_stock_quantity" in item ? <Text ta="right" fw={600}>{item.safety_stock_quantity}</Text> : null },
+    { label: "單位", value: item => "unit" in item ? item.unit : null },
   ] : [
     { label: "聯絡人", value: item => "contact_person" in item ? item.contact_person || "—" : null },
     { label: "電話", value: item => "phone" in item ? item.phone || "—" : null },
